@@ -1,0 +1,63 @@
+services:
+  kafka:
+    image: bitnami/kafka:3.7.1
+    networks:
+      - connect_network
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "9094:9094" # コンテナ外部からポート9094で Kafka Broker に接続
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      # コントローラーになるブローカーのID, シングルノードなので KAFKA_CFG_NODE_ID と同じ 0 を指定
+      - KAFKA_CFG_CONTROLLER_BROKER_ID=0
+      # ノードにコントローラーとブローカー両方のロールを付与
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      # ブローカーとコントローラーのリスナーを定義, それぞれ 9092, 9093 ポートを割り当て + 外部接続(EXTERNAL) のポート(9094)を追加
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      # 内部のホスト名に, EXTERNAL のホスト名を追加
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      # リスナー用のセキュリティプロトコルマップの指定 + EXTERNAL のプロトコルを指定
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      # {id}@{host}:{port} の形式
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      # コントローラーのリスナー名を指定
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      # - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+  kafka-ui:
+    image: "provectuslabs/kafka-ui:latest"
+    networks:
+      - connect_network
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    environment:
+      # kafka-ui の管理対象のクラスターの名前を指定
+      - KAFKA_CLUSTERS_0_NAME=local
+      # kafka-ui の管理対象のクラスターの bootstrap-server のホスト名とポートを指定
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+  connect:
+    container_name: "connect"
+    image: "ablankz/debezium:1.0.0"
+    networks:
+      - connect_network
+    restart: unless-stopped
+    depends_on:
+      - "kafka"
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: "kafka:9092"
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: ms_connect_configs
+      OFFSET_STORAGE_TOPIC: ms_connect_offsets
+      STATUS_STORAGE_TOPIC: ms_connect_statuses
+volumes:
+  kafka_data:
+networks:
+  connect_network:
+    external: true

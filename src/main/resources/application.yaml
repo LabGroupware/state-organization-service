@@ -1,0 +1,64 @@
+app:
+  name: @applicationName@
+  version: @version@
+spring:
+  application:
+    name: organization-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL:jdbc:postgresql://localhost:5435/user_preference}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  flyway:
+    enable: true
+    baseline-on-migrate: true # 既にあるテーブルなどがあるデータベースでもマイグレーションを実行する
+    baseline-version: 0
+grpc:
+  server:
+    port: ${ORGANIZATION_SERVICE_GRPC_PORT:9060} # default: 9090
+  client:
+    jobService:
+      address: dns:///${JOB_SERVICE_HOST:localhost}:${JOB_SERVICE_GRPC_PORT:9100}
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: PLAINTEXT
+core:
+  kafka: # kafkaプロパティ
+    bootstrap:
+      servers: ${KAFKA_SERVER:localhost:9094} # kafkaサーバーアドレス
+    connection:
+      validation:
+        timeout: 1000 # 接続検証のタイムアウト時間(Default: 1000, 現在未使用)
+    consumer:
+      properties:
+        {} # Kafkaにそのまま渡されるプロパティ. 下記は既に定義されており, 他に設定したい場合や上書きしたい場合に利用.
+        # "bootstrap.servers", bootstrapServers)
+        # "group.id", subscriberId)
+        # "enable.auto.commit", "false")
+        # "key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer")
+        # "value.deserializer", "org.apache.kafka.common.serialization.ByteArrayDeserializer")
+        # "auto.offset.reset", "earliest")
+      # back-pressure:
+      #   low: 0 # バックログ(未処理)の下限で, これを下回ったconsumerは, 一時停止されている場合に再開する.(default: 0)
+      #   high: 100 # バックログの上限で, これを上回ったconsumerは, 受け付けを一時停止して, 未処理のキューがこれを下回るまで処理のハンドルのみ続ける.(default: maxInteger)
+      poll-timeout: 100 # Kafkaコンシューマーのポーリングタイムアウトを指定, default: 100msだが, 現在未使用.
+  # outbox:
+  #   id: 1 # database id generatorを使用する場合に指定
+  database:
+    schema: ${DB_CORE_SCHEMA:core} # 使用するデータベーススキーマ名
+#     current:
+#         time:
+#             in:
+#                 milliseconds:
+#                     sql: #{null} # DefaultCoreSqlDialect使用時の現在時刻の設定.
+#     outbox:
+#         partitioning:
+#             outbox:
+#                 tables: #{null}
+#             message:
+#                 partitions: #{null}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

@@ -1,0 +1,88 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.5'
+	id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'org.cresplanex.api.state'
+version = '0.0.1'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	maven {
+		url "https://buf.build/gen/maven"
+	}
+}
+
+ext {
+	set('grpcStarterVersion', "3.1.0.RELEASE")
+	set('logstashEncoder', "8.0")
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.flywaydb:flyway-core'
+	implementation "net.devh:grpc-server-spring-boot-starter:${grpcStarterVersion}"
+	implementation "net.devh:grpc-client-spring-boot-starter:${grpcStarterVersion}"
+	implementation "net.logstash.logback:logstash-logback-encoder:${logstashEncoder}"
+
+	implementation "org.cresplanex.api.state:common:1.0.0"
+
+	implementation "org.flywaydb:flyway-database-postgresql"
+	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+import java.text.SimpleDateFormat
+
+task generateMigrationFile {
+    // 引数 `migrationName`を指定できるようにする
+    def migrationName = project.hasProperty('migrationName') ? project.property('migrationName') : 'create_table'
+
+	def dir = project.hasProperty('dir') ? project.property('dir') : 'ddl'
+
+    doLast {
+        // 日付フォーマットを使用して、ファイル名に現在の日時を追加
+        def timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date())
+        def fileName = "V${timestamp}__${migrationName}.sql"
+        // ディレクトリを作成して、ファイルを生成
+        def migrationDir = file("src/main/resources/db/migration/${dir}")
+        migrationDir.mkdirs()
+
+        // ファイルを作成
+        def file = new File(migrationDir, fileName)
+        file.createNewFile()
+        println "Migration file created at: ${file.path}"
+    }
+}
+
+import org.apache.tools.ant.filters.ReplaceTokens
+processResources {
+	filesMatching('**/application.yaml') {
+		filter(
+				ReplaceTokens,
+				tokens: [
+						'applicationName': "${rootProject.name}".toString(),
+						'version': "${version}".toString(),
+				]
+		)
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
