@@ -7,7 +7,7 @@ import org.cresplanex.api.state.common.event.model.organization.OrganizationDoma
 import org.cresplanex.api.state.common.event.publisher.AggregateDomainEventPublisher;
 import org.cresplanex.api.state.common.saga.SagaCommandChannel;
 import org.cresplanex.api.state.common.saga.data.organization.CreateOrganizationResultData;
-import org.cresplanex.api.state.common.saga.local.exception.organization.InvalidOrganizationPlanException;
+import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
 import org.cresplanex.api.state.common.saga.model.SagaModel;
 import org.cresplanex.api.state.common.saga.reply.organization.CreateOrganizationAndAddInitialOrganizationUserReply;
 import org.cresplanex.api.state.common.saga.reply.team.CreateDefaultTeamAndAddInitialDefaultTeamUserReply;
@@ -188,8 +188,8 @@ public class CreateOrganizationSaga extends SagaModel<
     public enum Action {
         VALIDATE_ORGANIZATION,
         VALIDATE_USER_PROFILE,
-        CREATE_ORGANIZATION,
-        CREATE_DEFAULT_TEAM
+        CREATE_ORGANIZATION_AND_ADD_INITIAL_ORGANIZATION_USER,
+        CREATE_DEFAULT_TEAM_AND_ADD_INITIAL_DEFAULT_TEAM_USER
     }
 
     @Override

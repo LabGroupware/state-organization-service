@@ -1,10 +1,18 @@
 package org.cresplanex.api.state.organizationservice.saga.state.organization;
 
 import lombok.*;
+import org.cresplanex.api.state.common.dto.organization.UserOnOrganizationDto;
+import org.cresplanex.api.state.common.dto.team.UserOnTeamDto;
 import org.cresplanex.api.state.common.dto.userpreference.UserPreferenceDto;
+import org.cresplanex.api.state.common.saga.command.organization.AddUsersOrganizationCommand;
+import org.cresplanex.api.state.common.saga.command.team.AddUsersDefaultTeamCommand;
 import org.cresplanex.api.state.common.saga.state.SagaState;
+import org.cresplanex.api.state.common.saga.validate.userprofile.UserProfileExistValidateCommand;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.saga.model.organization.AddUsersOrganizationSaga;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -12,13 +20,13 @@ import org.cresplanex.api.state.organizationservice.saga.model.organization.AddU
 public class AddUsersOrganizationSagaState
         extends SagaState<AddUsersOrganizationSaga.Action, OrganizationEntity> {
     private InitialData initialData;
-    private UserPreferenceDto userPreferenceDto = UserPreferenceDto.empty();
-    private UserPreferenceDto prevUserPreferenceDto = UserPreferenceDto.empty();
+    private List<UserOnOrganizationDto> addedUsers = new ArrayList<>();
+    private List<UserOnTeamDto> addedUsersOnTeam = new ArrayList<>();
     private String operatorId;
 
     @Override
     public String getId() {
-        return initialData.userPreferenceId;
+        return initialData.organizationId;
     }
 
     @Override
@@ -31,28 +39,58 @@ public class AddUsersOrganizationSagaState
     @AllArgsConstructor
     @Builder
     public static class InitialData {
-        private String userPreferenceId;
-        private String theme;
-        private String language;
-        private String timezone;
+        private String organizationId;
+        private List<User> users;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        public static class User{
+            private String userId;
+        }
+    }
+
+    public UserProfileExistValidateCommand makeUserProfileExistValidateCommand() {
+        return new UserProfileExistValidateCommand(
+                initialData.getUsers().stream()
+                        .map(AddUsersOrganizationSagaState.InitialData.User::getUserId)
+                        .toList());
     }
 
     public AddUsersOrganizationCommand.Exec makeAddUsersOrganizationCommand() {
         return new AddUsersOrganizationCommand.Exec(
                 this.operatorId,
-                initialData.getUserPreferenceId(),
-                initialData.getTheme(),
-                initialData.getLanguage(),
-                initialData.getTimezone()
+                initialData.getOrganizationId(),
+                initialData.getUsers().stream()
+                        .map(user -> new AddUsersOrganizationCommand.Exec.User(user.getUserId()))
+                        .toList()
         );
     }
 
     public AddUsersOrganizationCommand.Undo makeUndoAddUsersOrganizationCommand() {
         return new AddUsersOrganizationCommand.Undo(
-                userPreferenceDto.getUserPreferenceId(),
-                prevUserPreferenceDto.getTheme(),
-                prevUserPreferenceDto.getLanguage(),
-                prevUserPreferenceDto.getTimezone()
+                addedUsers.stream()
+                        .map(UserOnOrganizationDto::getUserOrganizationId)
+                        .toList()
+        );
+    }
+
+    public AddUsersDefaultTeamCommand.Exec makeAddUsersDefaultTeamCommand() {
+        return new AddUsersDefaultTeamCommand.Exec(
+                this.operatorId,
+                initialData.getOrganizationId(),
+                initialData.getUsers().stream()
+                        .map(user -> new AddUsersDefaultTeamCommand.Exec.User(user.getUserId()))
+                        .toList()
+        );
+    }
+
+    public AddUsersDefaultTeamCommand.Undo makeUndoAddUsersDefaultTeamCommand() {
+        return new AddUsersDefaultTeamCommand.Undo(
+                addedUsersOnTeam.stream()
+                        .map(UserOnTeamDto::getUserTeamId)
+                        .toList()
         );
     }
 }

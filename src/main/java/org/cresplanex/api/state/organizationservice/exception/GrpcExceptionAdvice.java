@@ -5,6 +5,7 @@ import build.buf.gen.userpreference.v1.*;
 import io.grpc.Status;
 import net.devh.boot.grpc.server.advice.GrpcAdvice;
 import net.devh.boot.grpc.server.advice.GrpcExceptionHandler;
+import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
 
 @GrpcAdvice
 public class GrpcExceptionAdvice {

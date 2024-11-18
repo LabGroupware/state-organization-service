@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,4 +28,12 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
      */
     @Query("SELECT o FROM OrganizationEntity o WHERE o.ownerId = :ownerId")
     Optional<OrganizationEntity> findByOwnerId(String ownerId);
+
+    /**
+     * List<OrganizationId>の数を取得
+     *
+     * @param organizationIds 組織IDリスト
+     * @return 組織IDの数
+     */
+    Optional<Long> countByOrganizationIdIn(List<String> organizationIds);
 }
