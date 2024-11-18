@@ -6,7 +6,7 @@ import org.cresplanex.api.state.common.dto.team.TeamDto;
 import org.cresplanex.api.state.common.saga.command.organization.CreateOrganizationAndAddInitialOrganizationUserCommand;
 import org.cresplanex.api.state.common.saga.command.team.CreateDefaultTeamAndAddInitialDefaultTeamUserCommand;
 import org.cresplanex.api.state.common.saga.state.SagaState;
-import org.cresplanex.api.state.common.saga.validate.userprofile.UserProfileExistValidateCommand;
+import org.cresplanex.api.state.common.saga.validate.userprofile.UserExistValidateCommand;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.saga.model.organization.CreateOrganizationSaga;
 
@@ -50,8 +50,8 @@ public class CreateOrganizationSagaState
         }
     }
 
-    public UserProfileExistValidateCommand makeUserProfileExistValidateCommand() {
-        return new UserProfileExistValidateCommand(
+    public UserExistValidateCommand makeUserExistValidateCommand() {
+        return new UserExistValidateCommand(
                 initialData.getUsers().stream()
                 .map(InitialData.User::getUserId)
                 .toList());

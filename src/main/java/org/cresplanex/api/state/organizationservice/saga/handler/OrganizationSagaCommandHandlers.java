@@ -9,8 +9,13 @@ import org.cresplanex.api.state.common.saga.command.organization.AddUsersOrganiz
 import org.cresplanex.api.state.common.saga.command.organization.CreateOrganizationAndAddInitialOrganizationUserCommand;
 import org.cresplanex.api.state.common.saga.reply.organization.AddUsersOrganizationReply;
 import org.cresplanex.api.state.common.saga.reply.organization.CreateOrganizationAndAddInitialOrganizationUserReply;
+import org.cresplanex.api.state.common.saga.reply.organization.OrganizationAndOrganizationUserExistValidateReply;
+import org.cresplanex.api.state.common.saga.validate.organization.OrganizationAndOrganizationUserExistValidateCommand;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationUserEntity;
+import org.cresplanex.api.state.organizationservice.exception.AlreadyExistOrganizationUserException;
+import org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationUserException;
+import org.cresplanex.api.state.organizationservice.exception.OrganizationNotFoundException;
 import org.cresplanex.api.state.organizationservice.mapper.dto.DtoMapper;
 import org.cresplanex.api.state.organizationservice.service.OrganizationService;
 import org.cresplanex.core.commands.consumer.CommandHandlers;
@@ -25,8 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static org.cresplanex.core.commands.consumer.CommandHandlerReplyBuilder.withException;
-import static org.cresplanex.core.commands.consumer.CommandHandlerReplyBuilder.withSuccess;
+import static org.cresplanex.core.commands.consumer.CommandHandlerReplyBuilder.*;
 import static org.cresplanex.core.saga.participant.SagaReplyMessageBuilder.withLock;
 
 @Slf4j
@@ -56,6 +60,11 @@ public class OrganizationSagaCommandHandlers {
                 .onMessage(AddUsersOrganizationCommand.Undo.class,
                         AddUsersOrganizationCommand.Undo.TYPE,
                         this::handleUndoAddUsersOrganizationCommand
+                )
+
+                .onMessage(OrganizationAndOrganizationUserExistValidateCommand.class,
+                        OrganizationAndOrganizationUserExistValidateCommand.TYPE,
+                        this::handleOrganizationAndOrganizationUserExistValidateCommand
                 )
                 .build();
     }
@@ -135,6 +144,14 @@ public class OrganizationSagaCommandHandlers {
                     LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             );
             return withSuccess(reply, AddUsersOrganizationReply.Success.TYPE);
+        } catch (AlreadyExistOrganizationUserException e) {
+            AddUsersOrganizationReply.Failure reply = new AddUsersOrganizationReply.Failure(
+                    new AddUsersOrganizationReply.Failure.AlreadyAddedOrganizationUser(e.getUserIds()),
+                    OrganizationServiceApplicationCode.ALREADY_EXIST_USER,
+                    "Users already added",
+                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            );
+            return withException(reply, AddUsersOrganizationReply.Failure.TYPE);
         } catch (Exception e) {
             AddUsersOrganizationReply.Failure reply = new AddUsersOrganizationReply.Failure(
                     null,
@@ -153,6 +170,41 @@ public class OrganizationSagaCommandHandlers {
             return withSuccess();
         } catch (Exception e) {
             return withException();
+        }
+    }
+
+    private Message handleOrganizationAndOrganizationUserExistValidateCommand(
+            CommandMessage<OrganizationAndOrganizationUserExistValidateCommand> cmd
+    ) {
+        try {
+            OrganizationAndOrganizationUserExistValidateCommand command = cmd.getCommand();
+            organizationService.validateOrganizationsAndOrganizationUsers(command.getOrganizationId(), command.getUserIds());
+            return withSuccess();
+        } catch (OrganizationNotFoundException e) {
+            OrganizationAndOrganizationUserExistValidateReply.Failure reply = new OrganizationAndOrganizationUserExistValidateReply.Failure(
+                    new OrganizationAndOrganizationUserExistValidateReply.Failure.OrganizationNotFound(e.getAggregateId()),
+                    OrganizationServiceApplicationCode.NOT_FOUND,
+                    "Organization not found",
+                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            );
+            return withFailure(reply, OrganizationAndOrganizationUserExistValidateReply.Failure.TYPE);
+        } catch (NotFoundOrganizationUserException e) {
+            OrganizationAndOrganizationUserExistValidateReply.Failure reply = new OrganizationAndOrganizationUserExistValidateReply.Failure(
+                    new OrganizationAndOrganizationUserExistValidateReply.Failure.OrganizationUserNotFound(e.getUserIds()),
+                    OrganizationServiceApplicationCode.NOT_EXIST_USER,
+                    "Organization user not found",
+                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            );
+            return withFailure(reply, OrganizationAndOrganizationUserExistValidateReply.Failure.TYPE);
+        } catch (Exception e) {
+            OrganizationAndOrganizationUserExistValidateReply.Failure reply =
+                    new OrganizationAndOrganizationUserExistValidateReply.Failure(
+                    null,
+                    OrganizationServiceApplicationCode.INTERNAL_SERVER_ERROR,
+                    "Failed to validate organization and organization users",
+                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            );
+            return withFailure(reply, OrganizationAndOrganizationUserExistValidateReply.Failure.TYPE);
         }
     }
 }

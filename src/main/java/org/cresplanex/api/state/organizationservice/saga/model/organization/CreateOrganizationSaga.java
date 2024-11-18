@@ -20,7 +20,7 @@ import org.cresplanex.api.state.organizationservice.saga.proxy.UserProfileServic
 import org.cresplanex.api.state.organizationservice.saga.state.organization.CreateOrganizationSagaState;
 import org.cresplanex.api.state.organizationservice.service.OrganizationService;
 import org.cresplanex.core.saga.orchestration.SagaDefinition;
-import org.cresplanex.api.state.common.saga.reply.userprofile.UserProfileExistValidateReply;
+import org.cresplanex.api.state.common.saga.reply.userprofile.UserExistValidateReply;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -47,17 +47,17 @@ public class CreateOrganizationSaga extends SagaModel<
                 .onExceptionRollback(InvalidOrganizationPlanException.class)
                 .step()
                 .invokeParticipant(
-                        userProfileService.userProfileExistValidate,
-                        CreateOrganizationSagaState::makeUserProfileExistValidateCommand
+                        userProfileService.userExistValidate,
+                        CreateOrganizationSagaState::makeUserExistValidateCommand
                 )
                 .onReply(
-                        UserProfileExistValidateReply.Success.class,
-                        UserProfileExistValidateReply.Success.TYPE,
-                        this::handleUserProfileExistValidateReply
+                        UserExistValidateReply.Success.class,
+                        UserExistValidateReply.Success.TYPE,
+                        this::handleUserExistValidateReply
                 )
                 .onReply(
-                        UserProfileExistValidateReply.Failure.class,
-                        UserProfileExistValidateReply.Failure.TYPE,
+                        UserExistValidateReply.Failure.class,
+                        UserExistValidateReply.Failure.TYPE,
                         this::handleFailureReply
                 )
                 .step()
@@ -153,8 +153,8 @@ public class CreateOrganizationSaga extends SagaModel<
         this.failureLocalExceptionPublish(state, e);
     }
 
-    private void handleUserProfileExistValidateReply(
-            CreateOrganizationSagaState state, UserProfileExistValidateReply.Success reply) {
+    private void handleUserExistValidateReply(
+            CreateOrganizationSagaState state, UserExistValidateReply.Success reply) {
         this.processedEventPublish(state, reply);
     }
 

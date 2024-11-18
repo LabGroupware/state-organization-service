@@ -7,6 +7,8 @@ import org.cresplanex.api.state.common.service.BaseService;
 import org.cresplanex.api.state.organizationservice.constants.PlanType;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationUserEntity;
+import org.cresplanex.api.state.organizationservice.exception.AlreadyExistOrganizationUserException;
+import org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationUserException;
 import org.cresplanex.api.state.organizationservice.exception.OrganizationNotFoundException;
 import org.cresplanex.api.state.organizationservice.repository.OrganizationRepository;
 import org.cresplanex.api.state.organizationservice.repository.OrganizationUserRepository;
@@ -133,6 +135,14 @@ public class OrganizationService extends BaseService {
     }
 
     public List<OrganizationUserEntity> addUsers(String operatorId, String organizationId, List<String> userIds) {
+        List<OrganizationUserEntity> existUsers = organizationUserRepository.
+                findAllByOrganizationIdAndUserIds(organizationId, userIds);
+        if (!existUsers.isEmpty()) {
+            List<String> existUserIds = existUsers.stream()
+                    .map(OrganizationUserEntity::getUserId)
+                    .toList();
+            throw new AlreadyExistOrganizationUserException(existUserIds);
+        }
         List<OrganizationUserEntity> users = userIds.stream()
                 .map(userId -> {
                     OrganizationUserEntity user = new OrganizationUserEntity();
@@ -155,5 +165,25 @@ public class OrganizationService extends BaseService {
 
     public void undoAddUsers(List<String> organizationUserIds) {
         organizationUserRepository.deleteAllById(organizationUserIds);
+    }
+
+    public void validateOrganizationsAndOrganizationUsers(String organizationId, List<String> userIds) {
+        organizationRepository.countByOrganizationIdIn(List.of(organizationId))
+                .ifPresent(count -> {
+                    if (count != 1) {
+                        throw new NotFoundOrganizationException(List.of(organizationId));
+                    }
+                });
+        List<String> existUserIds = organizationUserRepository.
+                findAllByOrganizationIdAndUserIds(organizationId, userIds)
+                .stream()
+                .map(OrganizationUserEntity::getUserId)
+                .toList();
+        if (existUserIds.size() != userIds.size()) {
+            List<String> notExistUserIds = userIds.stream()
+                    .filter(userId -> !existUserIds.contains(userId))
+                    .toList();
+            throw new NotFoundOrganizationUserException(notExistUserIds);
+        }
     }
 }

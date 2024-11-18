@@ -37,4 +37,14 @@ public interface OrganizationUserRepository extends JpaRepository<OrganizationUs
      */
     @Query("SELECT ou FROM OrganizationUserEntity ou JOIN FETCH ou.organization WHERE ou.organizationUserId = :organizationUserId")
     Optional<OrganizationUserEntity> findByIdWithOrganization(String organizationUserId);
+
+    /**
+     * 特定のorganizationIdとuserIdsに紐づくOrganizationUserEntityのリストを取得。
+     *
+     * @param organizationId 組織ID
+     * @param userIds ユーザーIDリスト
+     * @return OrganizationUserEntityのリスト
+     */
+    @Query("SELECT ou FROM OrganizationUserEntity ou WHERE ou.organization.organizationId = :organizationId AND ou.userId IN :userIds")
+    List<OrganizationUserEntity> findAllByOrganizationIdAndUserIds(String organizationId, List<String> userIds);
 }

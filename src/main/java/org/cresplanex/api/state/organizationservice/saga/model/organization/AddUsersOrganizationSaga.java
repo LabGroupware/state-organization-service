@@ -1,21 +1,16 @@
 package org.cresplanex.api.state.organizationservice.saga.model.organization;
 
-import org.checkerframework.checker.units.qual.A;
 import org.cresplanex.api.state.common.constants.OrganizationServiceApplicationCode;
 import org.cresplanex.api.state.common.event.model.organization.OrganizationAddedUsers;
 import org.cresplanex.api.state.common.event.model.organization.OrganizationDomainEvent;
 import org.cresplanex.api.state.common.event.publisher.AggregateDomainEventPublisher;
 import org.cresplanex.api.state.common.saga.SagaCommandChannel;
 import org.cresplanex.api.state.common.saga.data.organization.AddUsersOrganizationResultData;
-import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
-import org.cresplanex.api.state.common.saga.local.organization.NotFoundOrganizationException;
 import org.cresplanex.api.state.common.saga.local.organization.NotFoundOrganizationException;
 import org.cresplanex.api.state.common.saga.model.SagaModel;
 import org.cresplanex.api.state.common.saga.reply.organization.AddUsersOrganizationReply;
-import org.cresplanex.api.state.common.saga.reply.organization.CreateOrganizationAndAddInitialOrganizationUserReply;
 import org.cresplanex.api.state.common.saga.reply.team.AddUsersDefaultTeamReply;
-import org.cresplanex.api.state.common.saga.reply.team.CreateDefaultTeamAndAddInitialDefaultTeamUserReply;
-import org.cresplanex.api.state.common.saga.reply.userprofile.UserProfileExistValidateReply;
+import org.cresplanex.api.state.common.saga.reply.userprofile.UserExistValidateReply;
 import org.cresplanex.api.state.common.saga.type.OrganizationSagaType;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.event.publisher.OrganizationDomainEventPublisher;
@@ -23,7 +18,6 @@ import org.cresplanex.api.state.organizationservice.saga.proxy.OrganizationServi
 import org.cresplanex.api.state.organizationservice.saga.proxy.TeamServiceProxy;
 import org.cresplanex.api.state.organizationservice.saga.proxy.UserProfileServiceProxy;
 import org.cresplanex.api.state.organizationservice.saga.state.organization.AddUsersOrganizationSagaState;
-import org.cresplanex.api.state.organizationservice.saga.state.organization.CreateOrganizationSagaState;
 import org.cresplanex.api.state.organizationservice.service.OrganizationService;
 import org.cresplanex.core.saga.orchestration.SagaDefinition;
 import org.springframework.stereotype.Component;
@@ -54,17 +48,17 @@ public class AddUsersOrganizationSaga extends SagaModel<
                 .onExceptionRollback(NotFoundOrganizationException.class)
                 .step()
                 .invokeParticipant(
-                        userProfileService.userProfileExistValidate,
-                        AddUsersOrganizationSagaState::makeUserProfileExistValidateCommand
+                        userProfileService.userExistValidate,
+                        AddUsersOrganizationSagaState::makeUserExistValidateCommand
                 )
                 .onReply(
-                        UserProfileExistValidateReply.Success.class,
-                        UserProfileExistValidateReply.Success.TYPE,
-                        this::handleUserProfileExistValidateReply
+                        UserExistValidateReply.Success.class,
+                        UserExistValidateReply.Success.TYPE,
+                        this::handleUserExistValidateReply
                 )
                 .onReply(
-                        UserProfileExistValidateReply.Failure.class,
-                        UserProfileExistValidateReply.Failure.TYPE,
+                        UserExistValidateReply.Failure.class,
+                        UserExistValidateReply.Failure.TYPE,
                         this::handleFailureReply
                 )
                 .step()
@@ -158,8 +152,8 @@ public class AddUsersOrganizationSaga extends SagaModel<
         this.failureLocalExceptionPublish(state, e);
     }
 
-    private void handleUserProfileExistValidateReply(
-            AddUsersOrganizationSagaState state, UserProfileExistValidateReply.Success reply) {
+    private void handleUserExistValidateReply(
+            AddUsersOrganizationSagaState state, UserExistValidateReply.Success reply) {
         this.processedEventPublish(state, reply);
     }
 
