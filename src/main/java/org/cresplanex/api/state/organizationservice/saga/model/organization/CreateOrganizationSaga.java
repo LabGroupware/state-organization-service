@@ -187,7 +187,7 @@ public class CreateOrganizationSaga extends SagaModel<
 
     public enum Action {
         VALIDATE_ORGANIZATION,
-        VALIDATE_USER_PROFILE,
+        VALIDATE_USER,
         CREATE_ORGANIZATION_AND_ADD_INITIAL_ORGANIZATION_USER,
         CREATE_DEFAULT_TEAM_AND_ADD_INITIAL_DEFAULT_TEAM_USER
     }

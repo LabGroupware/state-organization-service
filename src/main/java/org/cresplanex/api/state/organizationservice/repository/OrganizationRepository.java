@@ -21,12 +21,20 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
     Optional<OrganizationEntity> findByIdWithUsers(String organizationId);
 
     /**
+     * List<OrganizationId>を取得し, OrganizationUserをJOINした状態で取得。
+     *
+     * @param organizationIds 組織IDリスト
+     * @return OrganizationEntityのリスト
+     */
+    @Query("SELECT o FROM OrganizationEntity o LEFT JOIN FETCH o.organizationUsers WHERE o.organizationId IN :organizationIds")
+    List<OrganizationEntity> findAllByIdWithUsers(List<String> organizationIds);
+
+    /**
      * Owner IDでOrganizationを取得。
      *
      * @param ownerId オーナーID
      * @return Organizationのリスト
      */
-    @Query("SELECT o FROM OrganizationEntity o WHERE o.ownerId = :ownerId")
     Optional<OrganizationEntity> findByOwnerId(String ownerId);
 
     /**

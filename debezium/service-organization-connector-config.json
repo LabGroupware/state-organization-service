@@ -4,7 +4,7 @@
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
     "tasks.max": "1",
     "database.hostname": "organization-postgres",
-    "database.port": "5435",
+    "database.port": "5432",
     "database.user": "postgres",
     "database.password": "postgres",
     "database.dbname": "organization",

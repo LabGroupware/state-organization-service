@@ -17,7 +17,6 @@ public interface OrganizationUserRepository extends JpaRepository<OrganizationUs
      * @param organizationId 組織ID
      * @return OrganizationUserEntityのリスト
      */
-    @Query("SELECT ou FROM OrganizationUserEntity ou WHERE ou.organization.organizationId = :organizationId")
     List<OrganizationUserEntity> findAllByOrganizationId(String organizationId);
 
     /**
@@ -26,7 +25,6 @@ public interface OrganizationUserRepository extends JpaRepository<OrganizationUs
      * @param userId ユーザーID
      * @return OrganizationUserEntityのリスト
      */
-    @Query("SELECT ou FROM OrganizationUserEntity ou WHERE ou.userId = :userId")
     List<OrganizationUserEntity> findAllByUserId(String userId);
 
     /**
@@ -45,6 +43,6 @@ public interface OrganizationUserRepository extends JpaRepository<OrganizationUs
      * @param userIds ユーザーIDリスト
      * @return OrganizationUserEntityのリスト
      */
-    @Query("SELECT ou FROM OrganizationUserEntity ou WHERE ou.organization.organizationId = :organizationId AND ou.userId IN :userIds")
+    @Query("SELECT ou FROM OrganizationUserEntity ou WHERE ou.organizationId = :organizationId AND ou.userId IN :userIds")
     List<OrganizationUserEntity> findAllByOrganizationIdAndUserIds(String organizationId, List<String> userIds);
 }

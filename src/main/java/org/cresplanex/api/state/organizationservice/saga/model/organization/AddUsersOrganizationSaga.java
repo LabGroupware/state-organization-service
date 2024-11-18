@@ -44,8 +44,7 @@ public class AddUsersOrganizationSaga extends SagaModel<
     ) {
         this.sagaDefinition = step()
                 .invokeLocal(this::validateOrganization)
-                .onException(NotFoundOrganizationException.class, this::handleNotFoundOrganizationException)
-                .onExceptionRollback(NotFoundOrganizationException.class)
+                .onException(NotFoundOrganizationException.class, this::failureLocalExceptionPublish)
                 .step()
                 .invokeParticipant(
                         userProfileService.userExistValidate,
@@ -54,7 +53,7 @@ public class AddUsersOrganizationSaga extends SagaModel<
                 .onReply(
                         UserExistValidateReply.Success.class,
                         UserExistValidateReply.Success.TYPE,
-                        this::handleUserExistValidateReply
+                        this::processedEventPublish
                 )
                 .onReply(
                         UserExistValidateReply.Failure.class,
@@ -146,18 +145,6 @@ public class AddUsersOrganizationSaga extends SagaModel<
         );
     }
 
-    private void handleNotFoundOrganizationException(
-            AddUsersOrganizationSagaState state, NotFoundOrganizationException e
-    ) {
-        this.failureLocalExceptionPublish(state, e);
-    }
-
-    private void handleUserExistValidateReply(
-            AddUsersOrganizationSagaState state, UserExistValidateReply.Success reply) {
-        this.processedEventPublish(state, reply);
-    }
-
-
     private void handleAddUsersOrganizationReply(
             AddUsersOrganizationSagaState state, AddUsersOrganizationReply.Success reply) {
         AddUsersOrganizationReply.Success.Data data = reply.getData();
@@ -180,7 +167,7 @@ public class AddUsersOrganizationSaga extends SagaModel<
 
     public enum Action {
         VALIDATE_ORGANIZATION,
-        VALIDATE_USER_PROFILE,
+        VALIDATE_USER,
         ADD_ORGANIZATION_USER,
         ADD_DEFAULT_TEAM_USER
     }

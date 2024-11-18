@@ -6,7 +6,7 @@ spring:
     name: organization-service
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${DB_URL:jdbc:postgresql://localhost:5435/user_preference}
+    url: ${DB_URL:jdbc:postgresql://localhost:5435/organization}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
   flyway:

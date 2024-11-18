@@ -1,6 +1,7 @@
 package org.cresplanex.api.state.organizationservice.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cresplanex.api.state.common.saga.local.LocalException;
 import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
 import org.cresplanex.api.state.common.saga.local.organization.NotFoundOrganizationException;
 import org.cresplanex.api.state.common.service.BaseService;
@@ -76,9 +77,9 @@ public class OrganizationService extends BaseService {
         // ただし, rollbackExceptionに登録する必要がある.
         try {
             sagaInstanceFactory.create(createOrganizationSaga, state);
-        } catch (InvalidOrganizationPlanException e) {
+        } catch (LocalException e) {
             // Jobで失敗イベント送信済みのため, ここでは何もしない
-            log.debug("InvalidOrganizationPlanException: {}", e.getMessage());
+            log.debug("LocalException: {}", e.getMessage());
             return jobId;
         }
 
@@ -103,9 +104,9 @@ public class OrganizationService extends BaseService {
 
         try {
             sagaInstanceFactory.create(addUsersOrganizationSaga, state);
-        } catch (NotFoundOrganizationException e) {
+        } catch (LocalException e) {
             // Jobで失敗イベント送信済みのため, ここでは何もしない
-            log.debug("NotFoundOrganizationException: {}", e.getMessage());
+            log.debug("LocalException: {}", e.getMessage());
             return jobId;
         }
 
@@ -171,7 +172,9 @@ public class OrganizationService extends BaseService {
         organizationRepository.countByOrganizationIdIn(List.of(organizationId))
                 .ifPresent(count -> {
                     if (count != 1) {
-                        throw new NotFoundOrganizationException(List.of(organizationId));
+                        throw new org.cresplanex.api.state.organizationservice.saga.handler.NotFoundOrganizationException(
+                                List.of(organizationId)
+                        );
                     }
                 });
         List<String> existUserIds = organizationUserRepository.
@@ -183,7 +186,7 @@ public class OrganizationService extends BaseService {
             List<String> notExistUserIds = userIds.stream()
                     .filter(userId -> !existUserIds.contains(userId))
                     .toList();
-            throw new NotFoundOrganizationUserException(notExistUserIds);
+            throw new NotFoundOrganizationUserException(organizationId, notExistUserIds);
         }
     }
 }

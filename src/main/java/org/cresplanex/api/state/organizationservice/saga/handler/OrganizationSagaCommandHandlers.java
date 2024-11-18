@@ -101,7 +101,7 @@ public class OrganizationSagaCommandHandlers {
                     LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             );
 
-            return withLock(LockTargetType.USER_PREFERENCE, organization.getOrganizationId())
+            return withLock(LockTargetType.ORGANIZATION, organization.getOrganizationId())
                     .withSuccess(reply, CreateOrganizationAndAddInitialOrganizationUserReply.Success.TYPE);
         } catch (Exception e) {
             CreateOrganizationAndAddInitialOrganizationUserReply.Failure reply = new CreateOrganizationAndAddInitialOrganizationUserReply.Failure(
@@ -180,9 +180,9 @@ public class OrganizationSagaCommandHandlers {
             OrganizationAndOrganizationUserExistValidateCommand command = cmd.getCommand();
             organizationService.validateOrganizationsAndOrganizationUsers(command.getOrganizationId(), command.getUserIds());
             return withSuccess();
-        } catch (OrganizationNotFoundException e) {
+        } catch (NotFoundOrganizationException e) {
             OrganizationAndOrganizationUserExistValidateReply.Failure reply = new OrganizationAndOrganizationUserExistValidateReply.Failure(
-                    new OrganizationAndOrganizationUserExistValidateReply.Failure.OrganizationNotFound(e.getAggregateId()),
+                    new OrganizationAndOrganizationUserExistValidateReply.Failure.OrganizationNotFound(e.getOrganizationIds()),
                     OrganizationServiceApplicationCode.NOT_FOUND,
                     "Organization not found",
                     LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
