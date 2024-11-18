@@ -113,25 +113,7 @@ public class OrganizationService extends BaseService {
         return jobId;
     }
 
-    public void validateCreatedOrganization(String name, String plan)
-            throws InvalidOrganizationPlanException {
-        if (!Arrays.asList(PlanType.ALL).contains(plan)) {
-            throw new InvalidOrganizationPlanException(List.of(plan));
-        }
-    }
-
-    public void validateOrganizations(List<String> organizationIds)
-            throws NotFoundOrganizationException {
-        organizationRepository.countByOrganizationIdIn(organizationIds)
-                .ifPresent(count -> {
-                    if (count != organizationIds.size()) {
-                        throw new NotFoundOrganizationException(organizationIds);
-                    }
-                });
-    }
-
-    public OrganizationEntity
-    createAndAddUsers(String operatorId, OrganizationEntity organization) {
+    public OrganizationEntity createAndAddUsers(String operatorId, OrganizationEntity organization) {
         return organizationRepository.save(organization);
     }
 

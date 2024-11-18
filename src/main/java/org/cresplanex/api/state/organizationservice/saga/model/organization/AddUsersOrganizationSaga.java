@@ -18,7 +18,7 @@ import org.cresplanex.api.state.organizationservice.saga.proxy.OrganizationServi
 import org.cresplanex.api.state.organizationservice.saga.proxy.TeamServiceProxy;
 import org.cresplanex.api.state.organizationservice.saga.proxy.UserProfileServiceProxy;
 import org.cresplanex.api.state.organizationservice.saga.state.organization.AddUsersOrganizationSagaState;
-import org.cresplanex.api.state.organizationservice.service.OrganizationService;
+import org.cresplanex.api.state.organizationservice.service.OrganizationLocalValidateService;
 import org.cresplanex.core.saga.orchestration.SagaDefinition;
 import org.springframework.stereotype.Component;
 
@@ -33,10 +33,10 @@ public class AddUsersOrganizationSaga extends SagaModel<
 
     private final SagaDefinition<AddUsersOrganizationSagaState> sagaDefinition;
     private final OrganizationDomainEventPublisher domainEventPublisher;
-    private final OrganizationService organizationLocalService;
+    private final OrganizationLocalValidateService organizationLocalService;
 
     public AddUsersOrganizationSaga(
-            OrganizationService organizationLocalService,
+            OrganizationLocalValidateService organizationLocalService,
             OrganizationServiceProxy organizationService,
             TeamServiceProxy teamService,
             UserProfileServiceProxy userProfileService,
