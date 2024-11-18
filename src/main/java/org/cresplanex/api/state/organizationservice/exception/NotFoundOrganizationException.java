@@ -1,4 +1,4 @@
-package org.cresplanex.api.state.organizationservice.saga.handler;
+package org.cresplanex.api.state.organizationservice.exception;
 
 import lombok.Getter;
 import lombok.Setter;

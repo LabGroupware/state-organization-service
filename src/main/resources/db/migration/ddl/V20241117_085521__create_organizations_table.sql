@@ -5,9 +5,9 @@ CREATE TABLE organizations (
         name VARCHAR(255) NOT NULL,
         plan VARCHAR(50) NOT NULL,
         site_url TEXT,
-        created_at date NOT NULL,
+        created_at TIMESTAMP NOT NULL,
         created_by varchar(50) NOT NULL,
-        updated_at date DEFAULT NULL,
+        updated_at TIMESTAMP DEFAULT NULL,
         updated_by varchar(50) DEFAULT NULL
 );
 

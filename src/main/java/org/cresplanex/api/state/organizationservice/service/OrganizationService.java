@@ -172,7 +172,7 @@ public class OrganizationService extends BaseService {
         organizationRepository.countByOrganizationIdIn(List.of(organizationId))
                 .ifPresent(count -> {
                     if (count != 1) {
-                        throw new org.cresplanex.api.state.organizationservice.saga.handler.NotFoundOrganizationException(
+                        throw new org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationException(
                                 List.of(organizationId)
                         );
                     }

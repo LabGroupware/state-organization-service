@@ -14,8 +14,8 @@ import org.cresplanex.api.state.common.saga.validate.organization.OrganizationAn
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationUserEntity;
 import org.cresplanex.api.state.organizationservice.exception.AlreadyExistOrganizationUserException;
+import org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationException;
 import org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationUserException;
-import org.cresplanex.api.state.organizationservice.exception.OrganizationNotFoundException;
 import org.cresplanex.api.state.organizationservice.mapper.dto.DtoMapper;
 import org.cresplanex.api.state.organizationservice.service.OrganizationService;
 import org.cresplanex.core.commands.consumer.CommandHandlers;

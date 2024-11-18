@@ -43,8 +43,7 @@ public class CreateOrganizationSaga extends SagaModel<
     ) {
         this.sagaDefinition = step()
                 .invokeLocal(this::validateOrganization)
-                .onException(InvalidOrganizationPlanException.class, this::handleInvalidOrganizationPlanException)
-                .onExceptionRollback(InvalidOrganizationPlanException.class)
+                .onException(InvalidOrganizationPlanException.class, this::failureLocalExceptionPublish)
                 .step()
                 .invokeParticipant(
                         userProfileService.userExistValidate,
@@ -53,7 +52,7 @@ public class CreateOrganizationSaga extends SagaModel<
                 .onReply(
                         UserExistValidateReply.Success.class,
                         UserExistValidateReply.Success.TYPE,
-                        this::handleUserExistValidateReply
+                        this::processedEventPublish
                 )
                 .onReply(
                         UserExistValidateReply.Failure.class,
@@ -144,18 +143,6 @@ public class CreateOrganizationSaga extends SagaModel<
         this.localProcessedEventPublish(
                 state, OrganizationServiceApplicationCode.SUCCESS, "Organization validated"
         );
-    }
-
-    private void handleInvalidOrganizationPlanException(
-            CreateOrganizationSagaState state,
-            InvalidOrganizationPlanException e
-    ) {
-        this.failureLocalExceptionPublish(state, e);
-    }
-
-    private void handleUserExistValidateReply(
-            CreateOrganizationSagaState state, UserExistValidateReply.Success reply) {
-        this.processedEventPublish(state, reply);
     }
 
     private void handleCreateOrganizationAndAddInitialOrganizationUserReply(

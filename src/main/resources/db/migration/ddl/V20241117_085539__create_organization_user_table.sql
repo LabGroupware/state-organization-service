@@ -3,9 +3,9 @@ CREATE TABLE organization_user (
         organization_id VARCHAR(100) NOT NULL,
         user_id VARCHAR(100) NOT NULL,
         version INTEGER DEFAULT 0 NOT NULL,
-        created_at date NOT NULL,
+        created_at TIMESTAMP NOT NULL,
         created_by varchar(50) NOT NULL,
-        updated_at date DEFAULT NULL,
+        updated_at TIMESTAMP DEFAULT NULL,
         updated_by varchar(50) DEFAULT NULL
 );
 
