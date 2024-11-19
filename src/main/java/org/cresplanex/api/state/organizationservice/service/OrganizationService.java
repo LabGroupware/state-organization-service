@@ -113,27 +113,28 @@ public class OrganizationService extends BaseService {
         return jobId;
     }
 
-    public OrganizationEntity createAndAddUsers(String operatorId, OrganizationEntity organization) {
-        return organizationRepository.save(organization);
+    public OrganizationEntity createAndAddUsers(String operatorId, OrganizationEntity organization, List<OrganizationUserEntity> users) {
+        organization = organizationRepository.save(organization);
+        OrganizationEntity finalOrganization = organization;
+        users = users.stream()
+                .peek(user -> user.setOrganization(finalOrganization))
+                .toList();
+        organizationUserRepository.saveAll(users);
+        organization.setOrganizationUsers(users);
+        return organization;
     }
 
-    public List<OrganizationUserEntity> addUsers(String operatorId, String organizationId, List<String> userIds) {
+    public List<OrganizationUserEntity> addUsers(String operatorId, String organizationId, List<OrganizationUserEntity> users) {
         List<OrganizationUserEntity> existUsers = organizationUserRepository.
-                findAllByOrganizationIdAndUserIds(organizationId, userIds);
+                findAllByOrganizationIdAndUserIds(organizationId, users.stream()
+                        .map(OrganizationUserEntity::getUserId)
+                        .toList());
         if (!existUsers.isEmpty()) {
             List<String> existUserIds = existUsers.stream()
                     .map(OrganizationUserEntity::getUserId)
                     .toList();
             throw new AlreadyExistOrganizationUserException(existUserIds);
         }
-        List<OrganizationUserEntity> users = userIds.stream()
-                .map(userId -> {
-                    OrganizationUserEntity user = new OrganizationUserEntity();
-                    user.setOrganizationId(organizationId);
-                    user.setUserId(userId);
-                    return user;
-                })
-                .toList();
         return organizationUserRepository.saveAll(users);
     }
 

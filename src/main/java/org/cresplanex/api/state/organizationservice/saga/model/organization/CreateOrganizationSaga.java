@@ -133,8 +133,8 @@ public class CreateOrganizationSaga extends SagaModel<
         return OrganizationCreated.SuccessJobDomainEvent.TYPE;
     }
 
-    private void validateOrganization(CreateOrganizationSagaState state)
-    throws InvalidOrganizationPlanException {
+    private void validateOrganization(CreateOrganizationSagaState state) {
+
         this.organizationLocalService.validateCreatedOrganization(
                 state.getInitialData().getName(),
                 state.getInitialData().getPlan()

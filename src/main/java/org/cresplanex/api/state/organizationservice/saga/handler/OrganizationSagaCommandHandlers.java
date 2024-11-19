@@ -3,6 +3,7 @@ package org.cresplanex.api.state.organizationservice.saga.handler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cresplanex.api.state.common.constants.OrganizationServiceApplicationCode;
+import org.cresplanex.api.state.common.dto.organization.UserOnOrganizationDto;
 import org.cresplanex.api.state.common.saga.LockTargetType;
 import org.cresplanex.api.state.common.saga.SagaCommandChannel;
 import org.cresplanex.api.state.common.saga.command.organization.AddUsersOrganizationCommand;
@@ -89,8 +90,7 @@ public class OrganizationSagaCommandHandlers {
                 userEntity.setUserId(user.getUserId());
                 return userEntity;
             }).toList();
-            organization.setOrganizationUsers(users);
-            organization = organizationService.createAndAddUsers(command.getOperatorId(), organization);
+            organization = organizationService.createAndAddUsers(command.getOperatorId(), organization, users);
             CreateOrganizationAndAddInitialOrganizationUserReply.Success reply = new CreateOrganizationAndAddInitialOrganizationUserReply.Success(
                     new CreateOrganizationAndAddInitialOrganizationUserReply.Success.Data(
                             DtoMapper.convert(organization),
@@ -104,6 +104,7 @@ public class OrganizationSagaCommandHandlers {
             return withLock(LockTargetType.ORGANIZATION, organization.getOrganizationId())
                     .withSuccess(reply, CreateOrganizationAndAddInitialOrganizationUserReply.Success.TYPE);
         } catch (Exception e) {
+            log.error("Failed to create organization", e);
             CreateOrganizationAndAddInitialOrganizationUserReply.Failure reply = new CreateOrganizationAndAddInitialOrganizationUserReply.Failure(
                     null,
                     OrganizationServiceApplicationCode.INTERNAL_SERVER_ERROR,
@@ -132,7 +133,12 @@ public class OrganizationSagaCommandHandlers {
     ) {
         try {
             AddUsersOrganizationCommand.Exec command = cmd.getCommand();
-            List<String> users = command.getUsers().stream().map(AddUsersOrganizationCommand.Exec.User::getUserId).toList();
+            List<OrganizationUserEntity> users = command.getUsers().stream().map(user -> {
+                OrganizationUserEntity userEntity = new OrganizationUserEntity();
+                userEntity.setUserId(user.getUserId());
+                userEntity.setOrganizationId(command.getOrganizationId());
+                return userEntity;
+            }).toList();
 
             List<OrganizationUserEntity> organizationUsers = organizationService.addUsers(command.getOperatorId(), command.getOrganizationId(), users);
             AddUsersOrganizationReply.Success reply = new AddUsersOrganizationReply.Success(
@@ -179,7 +185,15 @@ public class OrganizationSagaCommandHandlers {
         try {
             OrganizationAndOrganizationUserExistValidateCommand command = cmd.getCommand();
             organizationService.validateOrganizationsAndOrganizationUsers(command.getOrganizationId(), command.getUserIds());
-            return withSuccess();
+            return withSuccess(
+                    new OrganizationAndOrganizationUserExistValidateReply.Success(
+                            null,
+                            OrganizationServiceApplicationCode.SUCCESS,
+                            "Organization and organization users exist validate successfully",
+                            LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    ),
+                    OrganizationAndOrganizationUserExistValidateReply.Success.TYPE
+            );
         } catch (NotFoundOrganizationException e) {
             OrganizationAndOrganizationUserExistValidateReply.Failure reply = new OrganizationAndOrganizationUserExistValidateReply.Failure(
                     new OrganizationAndOrganizationUserExistValidateReply.Failure.OrganizationNotFound(e.getOrganizationIds()),

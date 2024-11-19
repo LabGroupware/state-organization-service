@@ -76,7 +76,7 @@ public class CreateOrganizationSagaState
         return new CreateDefaultTeamAndAddInitialDefaultTeamUserCommand.Exec(
                 this.operatorId,
                 organizationWithUsersDto.getOrganization().getOrganizationId(),
-                teamDto.getName(),
+                organizationWithUsersDto.getOrganization().getName(),
                 initialData.getUsers().stream()
                         .map(user -> new CreateDefaultTeamAndAddInitialDefaultTeamUserCommand.Exec.User(user.getUserId()))
                         .toList()
