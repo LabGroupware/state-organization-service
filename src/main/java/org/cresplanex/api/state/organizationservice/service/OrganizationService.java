@@ -1,23 +1,29 @@
 package org.cresplanex.api.state.organizationservice.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cresplanex.api.state.common.entity.ListEntityWithCount;
+import org.cresplanex.api.state.common.enums.PaginationType;
 import org.cresplanex.api.state.common.saga.local.LocalException;
-import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
-import org.cresplanex.api.state.common.saga.local.organization.NotFoundOrganizationException;
 import org.cresplanex.api.state.common.service.BaseService;
-import org.cresplanex.api.state.organizationservice.constants.PlanType;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationUserEntity;
+import org.cresplanex.api.state.organizationservice.enums.OrganizationSortType;
 import org.cresplanex.api.state.organizationservice.exception.AlreadyExistOrganizationUserException;
 import org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationUserException;
 import org.cresplanex.api.state.organizationservice.exception.OrganizationNotFoundException;
+import org.cresplanex.api.state.organizationservice.filter.organization.OwnerFilter;
+import org.cresplanex.api.state.organizationservice.filter.organization.PlanFilter;
+import org.cresplanex.api.state.organizationservice.filter.organization.UsersFilter;
 import org.cresplanex.api.state.organizationservice.repository.OrganizationRepository;
 import org.cresplanex.api.state.organizationservice.repository.OrganizationUserRepository;
 import org.cresplanex.api.state.organizationservice.saga.model.organization.AddUsersOrganizationSaga;
 import org.cresplanex.api.state.organizationservice.saga.model.organization.CreateOrganizationSaga;
 import org.cresplanex.api.state.organizationservice.saga.state.organization.AddUsersOrganizationSagaState;
 import org.cresplanex.api.state.organizationservice.saga.state.organization.CreateOrganizationSagaState;
+import org.cresplanex.api.state.organizationservice.specification.OrganizationSpecifications;
 import org.cresplanex.core.saga.orchestration.SagaInstanceFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -51,8 +57,45 @@ public class OrganizationService extends BaseService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrganizationEntity> get() {
-        return organizationRepository.findAll();
+    public ListEntityWithCount<OrganizationEntity> get(
+            PaginationType paginationType,
+            int limit,
+            int offset,
+            String cursor,
+            OrganizationSortType sortType,
+            boolean withCount,
+            PlanFilter planFilter,
+            OwnerFilter ownerFilter,
+            UsersFilter usersFilter
+    ) {
+        Specification<OrganizationEntity> spec = Specification.where(
+                OrganizationSpecifications.withPlanFilter(planFilter)
+                        .and(OrganizationSpecifications.withOwnerFilter(ownerFilter))
+                        .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter)));
+
+        List<OrganizationEntity> data = switch (paginationType) {
+            case OFFSET ->
+                    organizationRepository.findListWithOffsetPagination(spec, sortType, PageRequest.of(offset / limit, limit));
+            case CURSOR -> organizationRepository.findList(spec, sortType); // TODO: Implement cursor pagination
+            default -> organizationRepository.findList(spec, sortType);
+        };
+
+        int count = 0;
+        if (withCount){
+            count = organizationRepository.countList(spec);
+        }
+        return new ListEntityWithCount<>(
+                data,
+                count
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrganizationEntity> getByOrganizationIds(
+            List<String> organizationIds,
+            OrganizationSortType sortType
+    ) {
+        return organizationRepository.findListByOrganizationIds(organizationIds, sortType);
     }
 
     @Transactional

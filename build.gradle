@@ -34,7 +34,7 @@ dependencies {
 	implementation "net.devh:grpc-client-spring-boot-starter:${grpcStarterVersion}"
 	implementation "net.logstash.logback:logstash-logback-encoder:${logstashEncoder}"
 
-	implementation "org.cresplanex.api.state:common:1.0.0"
+	implementation "org.cresplanex.api.state:common:1.0.2"
 
 	implementation "org.flywaydb:flyway-database-postgresql"
 	runtimeOnly 'org.postgresql:postgresql'

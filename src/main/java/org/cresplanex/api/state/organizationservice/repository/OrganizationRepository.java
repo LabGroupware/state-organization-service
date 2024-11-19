@@ -1,6 +1,9 @@
 package org.cresplanex.api.state.organizationservice.repository;
 
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
+import org.cresplanex.api.state.organizationservice.enums.OrganizationSortType;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -44,4 +47,26 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
      * @return 組織IDの数
      */
     Optional<Long> countByOrganizationIdIn(List<String> organizationIds);
+
+    @Query("SELECT o FROM OrganizationEntity o WHERE o.organizationId IN :organization ORDER BY " +
+            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
+            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC")
+    List<OrganizationEntity> findListByOrganizationIds(List<String> organizationIds, OrganizationSortType sortType);
+
+    @Query("SELECT o FROM OrganizationEntity o ORDER BY " +
+            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
+            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
+            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
+            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
+    List<OrganizationEntity> findList(Specification<OrganizationEntity> specification, OrganizationSortType sortType);
+
+    @Query("SELECT o FROM OrganizationEntity o ORDER BY " +
+            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
+            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
+            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
+            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
+    List<OrganizationEntity> findListWithOffsetPagination(Specification<OrganizationEntity> specification, OrganizationSortType sortType, Pageable pageable);
+
+    @Query("SELECT COUNT(o) FROM OrganizationEntity o")
+    int countList(Specification<OrganizationEntity> specification);
 }
