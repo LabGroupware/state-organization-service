@@ -1,6 +1,7 @@
 package org.cresplanex.api.state.organizationservice.mapper.proto;
 
 import build.buf.gen.organization.v1.Organization;
+import build.buf.gen.organization.v1.OrganizationOnUser;
 import build.buf.gen.organization.v1.OrganizationWithUsers;
 import build.buf.gen.organization.v1.UserOnOrganization;
 import org.cresplanex.api.state.common.utils.ValueFromNullable;
@@ -38,6 +39,19 @@ public class ProtoMapper {
         return OrganizationWithUsers.newBuilder()
                 .setOrganization(convert(organizationEntity))
                 .addAllUsers(convert(userOnOrganizationEntities))
+                .build();
+    }
+
+    public static OrganizationOnUser convertOnUser(OrganizationUserEntity organizationUserEntity) {
+        return OrganizationOnUser.newBuilder()
+                .setOrganization(convert(organizationUserEntity.getOrganization()))
+                .build();
+    }
+
+    public static OrganizationWithUsers convertWithUsers(OrganizationEntity organizationEntity) {
+        return OrganizationWithUsers.newBuilder()
+                .setOrganization(convert(organizationEntity))
+                .addAllUsers(convert(organizationEntity.getOrganizationUsers()))
                 .build();
     }
 }

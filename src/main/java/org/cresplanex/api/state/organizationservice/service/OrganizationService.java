@@ -7,7 +7,10 @@ import org.cresplanex.api.state.common.saga.local.LocalException;
 import org.cresplanex.api.state.common.service.BaseService;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
 import org.cresplanex.api.state.organizationservice.entity.OrganizationUserEntity;
+import org.cresplanex.api.state.organizationservice.enums.OrganizationOnUserSortType;
 import org.cresplanex.api.state.organizationservice.enums.OrganizationSortType;
+import org.cresplanex.api.state.organizationservice.enums.OrganizationWithUsersSortType;
+import org.cresplanex.api.state.organizationservice.enums.UserOnOrganizationSortType;
 import org.cresplanex.api.state.organizationservice.exception.AlreadyExistOrganizationUserException;
 import org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationUserException;
 import org.cresplanex.api.state.organizationservice.exception.OrganizationNotFoundException;
@@ -49,6 +52,14 @@ public class OrganizationService extends BaseService {
         return internalFindById(organizationId);
     }
 
+    @Transactional(readOnly = true)
+    public OrganizationEntity findByIdWithUsers(String organizationId) {
+        return organizationRepository.findByIdWithUsers(organizationId).orElseThrow(() -> new OrganizationNotFoundException(
+                OrganizationNotFoundException.FindType.BY_ID,
+                organizationId
+        ));
+    }
+
     private OrganizationEntity internalFindById(String organizationId) {
         return organizationRepository.findById(organizationId).orElseThrow(() -> new OrganizationNotFoundException(
                 OrganizationNotFoundException.FindType.BY_ID,
@@ -75,7 +86,7 @@ public class OrganizationService extends BaseService {
 
         List<OrganizationEntity> data = switch (paginationType) {
             case OFFSET ->
-                    organizationRepository.findListWithOffsetPagination(spec, sortType, PageRequest.of(offset / limit, limit));
+                    organizationRepository.findList(spec, sortType, PageRequest.of(offset / limit, limit));
             case CURSOR -> organizationRepository.findList(spec, sortType); // TODO: Implement cursor pagination
             default -> organizationRepository.findList(spec, sortType);
         };
@@ -83,6 +94,98 @@ public class OrganizationService extends BaseService {
         int count = 0;
         if (withCount){
             count = organizationRepository.countList(spec);
+        }
+        return new ListEntityWithCount<>(
+                data,
+                count
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ListEntityWithCount<OrganizationEntity> getWithUsers(
+            PaginationType paginationType,
+            int limit,
+            int offset,
+            String cursor,
+            OrganizationWithUsersSortType sortType,
+            boolean withCount,
+            PlanFilter planFilter,
+            OwnerFilter ownerFilter,
+            UsersFilter usersFilter
+    ) {
+        Specification<OrganizationEntity> spec = Specification.where(
+                OrganizationSpecifications.withPlanFilter(planFilter)
+                        .and(OrganizationSpecifications.withOwnerFilter(ownerFilter))
+                        .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter)));
+
+        List<OrganizationEntity> data = switch (paginationType) {
+            case OFFSET ->
+                    organizationRepository.findListWithUsers(spec, sortType, PageRequest.of(offset / limit, limit));
+            case CURSOR -> organizationRepository.findListWithUsers(spec, sortType); // TODO: Implement cursor pagination
+            default -> organizationRepository.findListWithUsers(spec, sortType);
+        };
+
+        int count = 0;
+        if (withCount){
+            count = organizationRepository.countList(spec);
+        }
+        return new ListEntityWithCount<>(
+                data,
+                count
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ListEntityWithCount<OrganizationUserEntity> getUsersOnOrganization(
+            String organizationId,
+            PaginationType paginationType,
+            int limit,
+            int offset,
+            String cursor,
+            UserOnOrganizationSortType sortType,
+            boolean withCount
+    ) {
+        Specification<OrganizationEntity> spec = Specification.where(null);
+
+        List<OrganizationUserEntity> data = switch (paginationType) {
+            case OFFSET ->
+                    organizationUserRepository.findUsersListOnOrganizationWithOffsetPagination(spec, organizationId, sortType, PageRequest.of(offset / limit, limit));
+            case CURSOR -> organizationUserRepository.findUsersListOnOrganization(spec, organizationId, sortType); // TODO: Implement cursor pagination
+            default -> organizationUserRepository.findUsersListOnOrganization(spec, organizationId, sortType);
+        };
+
+        int count = 0;
+        if (withCount){
+            count = organizationUserRepository.countUsersListOnOrganization(spec, organizationId);
+        }
+        return new ListEntityWithCount<>(
+                data,
+                count
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ListEntityWithCount<OrganizationUserEntity> getOrganizationsOnUser(
+            String userId,
+            PaginationType paginationType,
+            int limit,
+            int offset,
+            String cursor,
+            OrganizationOnUserSortType sortType,
+            boolean withCount
+    ) {
+        Specification<OrganizationEntity> spec = Specification.where(null);
+
+        List<OrganizationUserEntity> data = switch (paginationType) {
+            case OFFSET ->
+                    organizationUserRepository.findOrganizationsOnUserWithOffsetPagination(spec, userId, sortType, PageRequest.of(offset / limit, limit));
+            case CURSOR -> organizationUserRepository.findOrganizationsOnUser(spec, userId, sortType); // TODO: Implement cursor pagination
+            default -> organizationUserRepository.findOrganizationsOnUser(spec, userId, sortType);
+        };
+
+        int count = 0;
+        if (withCount){
+            count = organizationUserRepository.countOrganizationsOnUser(spec, userId);
         }
         return new ListEntityWithCount<>(
                 data,
