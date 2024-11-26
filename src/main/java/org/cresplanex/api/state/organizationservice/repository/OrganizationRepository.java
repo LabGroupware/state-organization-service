@@ -42,6 +42,13 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
             "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
     List<OrganizationEntity> findListByOrganizationIds(List<String> organizationIds, OrganizationSortType sortType);
 
+    @Query("SELECT o FROM OrganizationEntity o LEFT JOIN FETCH o.organizationUsers WHERE o.organizationId IN :organizationIds ORDER BY " +
+            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
+            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
+            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
+            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
+    List<OrganizationEntity> findListByOrganizationIdsWithUsers(List<String> organizationIds, OrganizationWithUsersSortType sortType);
+
     @Query("SELECT o FROM OrganizationEntity o ORDER BY " +
             "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
             "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +

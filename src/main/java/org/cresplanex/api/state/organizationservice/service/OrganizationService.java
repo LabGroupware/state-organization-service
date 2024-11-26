@@ -201,6 +201,14 @@ public class OrganizationService extends BaseService {
         return organizationRepository.findListByOrganizationIds(organizationIds, sortType);
     }
 
+    @Transactional(readOnly = true)
+    public List<OrganizationEntity> getByOrganizationIdsWithUsers(
+            List<String> organizationIds,
+            OrganizationWithUsersSortType sortType
+    ) {
+        return organizationRepository.findListByOrganizationIdsWithUsers(organizationIds, sortType);
+    }
+
     @Transactional
     public String beginCreate(String operatorId, OrganizationEntity organization, List<OrganizationUserEntity> users) {
         CreateOrganizationSagaState.InitialData initialData = CreateOrganizationSagaState.InitialData.builder()

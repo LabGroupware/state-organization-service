@@ -164,6 +164,26 @@ public class OrganizationServiceHandler extends OrganizationServiceGrpc.Organiza
         responseObserver.onCompleted();
     }
 
+
+    @Override
+    public void getPluralOrganizationsWithUsers(GetPluralOrganizationsWithUsersRequest request, StreamObserver<GetPluralOrganizationsWithUsersResponse> responseObserver) {
+        OrganizationWithUsersSortType sortType = switch (request.getSort().getOrderField()) {
+            case ORGANIZATION_WITH_USERS_ORDER_FIELD_NAME -> (request.getSort().getOrder() == SortOrder.SORT_ORDER_ASC) ?
+                    OrganizationWithUsersSortType.NAME_ASC : OrganizationWithUsersSortType.NAME_DESC;
+            default -> (request.getSort().getOrder() == SortOrder.SORT_ORDER_ASC) ?
+                    OrganizationWithUsersSortType.CREATED_AT_ASC : OrganizationWithUsersSortType.CREATED_AT_DESC;
+        };
+        List<OrganizationWithUsers> organizationProtos = this.organizationService.getByOrganizationIdsWithUsers(
+                        request.getOrganizationIdsList(), sortType).stream()
+                .map(ProtoMapper::convertWithUsers).toList();
+        GetPluralOrganizationsWithUsersResponse response = GetPluralOrganizationsWithUsersResponse.newBuilder()
+                .addAllOrganizations(organizationProtos)
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+
     @Override
     public void getUsersOnOrganization(GetUsersOnOrganizationRequest request, StreamObserver<GetUsersOnOrganizationResponse> responseObserver) {
         UserOnOrganizationSortType sortType = switch (request.getSort().getOrderField()) {
