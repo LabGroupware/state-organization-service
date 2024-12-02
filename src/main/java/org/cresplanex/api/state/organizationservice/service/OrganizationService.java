@@ -26,6 +26,8 @@ import org.cresplanex.api.state.organizationservice.saga.state.organization.Crea
 import org.cresplanex.api.state.organizationservice.specification.OrganizationSpecifications;
 import org.cresplanex.core.saga.orchestration.SagaInstanceFactory;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -84,12 +86,15 @@ public class OrganizationService extends BaseService {
                         .and(OrganizationSpecifications.withOwnerFilter(ownerFilter))
                         .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter)));
 
-        List<OrganizationEntity> data = switch (paginationType) {
-            case OFFSET ->
-                    organizationRepository.findList(spec, sortType, PageRequest.of(offset / limit, limit));
-            case CURSOR -> organizationRepository.findList(spec, sortType); // TODO: Implement cursor pagination
-            default -> organizationRepository.findList(spec, sortType);
+        Sort sort = createSort(sortType);
+
+        Pageable pageable = switch (paginationType) {
+            case OFFSET -> PageRequest.of(offset / limit, limit, sort);
+            case CURSOR -> PageRequest.of(0, limit, sort); // TODO: Implement cursor pagination
+            default -> Pageable.unpaged(sort);
         };
+
+        List<OrganizationEntity> data = organizationRepository.findList(spec, pageable);
 
         int count = 0;
         if (withCount){
@@ -118,12 +123,15 @@ public class OrganizationService extends BaseService {
                         .and(OrganizationSpecifications.withOwnerFilter(ownerFilter))
                         .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter)));
 
-        List<OrganizationEntity> data = switch (paginationType) {
-            case OFFSET ->
-                    organizationRepository.findListWithUsers(spec, sortType, PageRequest.of(offset / limit, limit));
-            case CURSOR -> organizationRepository.findListWithUsers(spec, sortType); // TODO: Implement cursor pagination
-            default -> organizationRepository.findListWithUsers(spec, sortType);
+        Sort sort = createSort(sortType);
+
+        Pageable pageable = switch (paginationType) {
+            case OFFSET -> PageRequest.of(offset / limit, limit, sort);
+            case CURSOR -> PageRequest.of(0, limit, sort); // TODO: Implement cursor pagination
+            default -> Pageable.unpaged(sort);
         };
+
+        List<OrganizationEntity> data = organizationRepository.findListWithUsers(spec, pageable);
 
         int count = 0;
         if (withCount){
@@ -145,18 +153,22 @@ public class OrganizationService extends BaseService {
             UserOnOrganizationSortType sortType,
             boolean withCount
     ) {
-        Specification<OrganizationEntity> spec = Specification.where(null);
+        Specification<OrganizationUserEntity> spec = (root, query, cb) ->
+                cb.equal(root.get("organizationId"), organizationId);
 
-        List<OrganizationUserEntity> data = switch (paginationType) {
-            case OFFSET ->
-                    organizationUserRepository.findUsersListOnOrganizationWithOffsetPagination(spec, organizationId, sortType, PageRequest.of(offset / limit, limit));
-            case CURSOR -> organizationUserRepository.findUsersListOnOrganization(spec, organizationId, sortType); // TODO: Implement cursor pagination
-            default -> organizationUserRepository.findUsersListOnOrganization(spec, organizationId, sortType);
+        Sort sort = createSort(sortType);
+
+        Pageable pageable = switch (paginationType) {
+            case OFFSET -> PageRequest.of(offset / limit, limit, sort);
+            case CURSOR -> PageRequest.of(0, limit, sort); // TODO: Implement cursor pagination
+            default -> Pageable.unpaged(sort);
         };
+
+        List<OrganizationUserEntity> data = organizationUserRepository.findList(spec, pageable);
 
         int count = 0;
         if (withCount){
-            count = organizationUserRepository.countUsersListOnOrganization(spec, organizationId);
+            count = organizationUserRepository.countList(spec);
         }
         return new ListEntityWithCount<>(
                 data,
@@ -174,18 +186,20 @@ public class OrganizationService extends BaseService {
             OrganizationOnUserSortType sortType,
             boolean withCount
     ) {
-        Specification<OrganizationEntity> spec = Specification.where(null);
+        Specification<OrganizationUserEntity> spec = (root, query, cb) ->
+                cb.equal(root.get("userId"), userId);
 
-        List<OrganizationUserEntity> data = switch (paginationType) {
-            case OFFSET ->
-                    organizationUserRepository.findOrganizationsOnUserWithOffsetPagination(spec, userId, sortType, PageRequest.of(offset / limit, limit));
-            case CURSOR -> organizationUserRepository.findOrganizationsOnUser(spec, userId, sortType); // TODO: Implement cursor pagination
-            default -> organizationUserRepository.findOrganizationsOnUser(spec, userId, sortType);
+        Pageable pageable = switch (paginationType) {
+            case OFFSET -> PageRequest.of(offset / limit, limit);
+            case CURSOR -> PageRequest.of(0, limit); // TODO: Implement cursor pagination
+            default -> Pageable.unpaged();
         };
+
+        List<OrganizationUserEntity> data = organizationUserRepository.findListWithOrganization(spec, pageable);
 
         int count = 0;
         if (withCount){
-            count = organizationUserRepository.countOrganizationsOnUser(spec, userId);
+            count = organizationUserRepository.countList(spec);
         }
         return new ListEntityWithCount<>(
                 data,
@@ -198,7 +212,9 @@ public class OrganizationService extends BaseService {
             List<String> organizationIds,
             OrganizationSortType sortType
     ) {
-        return organizationRepository.findListByOrganizationIds(organizationIds, sortType);
+        Specification<OrganizationEntity> spec = (root, query, cb) ->
+                root.get("organizationId").in(organizationIds);
+        return organizationRepository.findList(spec, Pageable.unpaged(createSort(sortType)));
     }
 
     @Transactional(readOnly = true)
@@ -206,7 +222,9 @@ public class OrganizationService extends BaseService {
             List<String> organizationIds,
             OrganizationWithUsersSortType sortType
     ) {
-        return organizationRepository.findListByOrganizationIdsWithUsers(organizationIds, sortType);
+        Specification<OrganizationEntity> spec = (root, query, cb) ->
+                root.get("organizationId").in(organizationIds);
+        return organizationRepository.findListWithUsers(spec, Pageable.unpaged(createSort(sortType)));
     }
 
     @Transactional
@@ -325,5 +343,41 @@ public class OrganizationService extends BaseService {
                     .toList();
             throw new NotFoundOrganizationUserException(organizationId, notExistUserIds);
         }
+    }
+
+    public Sort createSort(OrganizationSortType sortType) {
+        return switch (sortType) {
+            case CREATED_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
+            case CREATED_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
+            case NAME_ASC -> Sort.by(Sort.Order.asc("name"), Sort.Order.desc("createdAt"));
+            case NAME_DESC -> Sort.by(Sort.Order.desc("name"), Sort.Order.desc("createdAt"));
+        };
+    }
+
+    public Sort createSort(OrganizationWithUsersSortType sortType) {
+        return switch (sortType) {
+            case CREATED_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
+            case CREATED_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
+            case NAME_ASC -> Sort.by(Sort.Order.asc("name"), Sort.Order.desc("createdAt"));
+            case NAME_DESC -> Sort.by(Sort.Order.desc("name"), Sort.Order.desc("createdAt"));
+        };
+    }
+
+    public Sort createSort(UserOnOrganizationSortType sortType) {
+        return switch (sortType) {
+            case ADD_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
+            case ADD_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
+        };
+    }
+
+    public Sort createSort(OrganizationOnUserSortType sortType) {
+        return switch (sortType) {
+            case ADD_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
+            case ADD_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
+            case NAME_ASC -> Sort.by(Sort.Order.asc("organization.name"), Sort.Order.desc("createdAt"));
+            case NAME_DESC -> Sort.by(Sort.Order.desc("organization.name"), Sort.Order.desc("createdAt"));
+            case CREATED_AT_ASC -> Sort.by(Sort.Order.asc("organization.createdAt"), Sort.Order.desc("createdAt"));
+            case CREATED_AT_DESC -> Sort.by(Sort.Order.desc("organization.createdAt"), Sort.Order.desc("createdAt"));
+        };
     }
 }

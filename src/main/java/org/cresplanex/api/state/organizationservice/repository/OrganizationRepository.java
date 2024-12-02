@@ -35,47 +35,11 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
      */
     Optional<Long> countByOrganizationIdIn(List<String> organizationIds);
 
-    @Query("SELECT o FROM OrganizationEntity o WHERE o.organizationId IN :organizationIds ORDER BY " +
-            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
-            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
-            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
-            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
-    List<OrganizationEntity> findListByOrganizationIds(List<String> organizationIds, OrganizationSortType sortType);
+    @Query("SELECT o FROM OrganizationEntity o")
+    List<OrganizationEntity> findList(Specification<OrganizationEntity> specification, Pageable pageable);
 
-    @Query("SELECT o FROM OrganizationEntity o LEFT JOIN FETCH o.organizationUsers WHERE o.organizationId IN :organizationIds ORDER BY " +
-            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
-            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
-            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
-            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
-    List<OrganizationEntity> findListByOrganizationIdsWithUsers(List<String> organizationIds, OrganizationWithUsersSortType sortType);
-
-    @Query("SELECT o FROM OrganizationEntity o ORDER BY " +
-            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
-            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
-            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
-            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
-    List<OrganizationEntity> findList(Specification<OrganizationEntity> specification, OrganizationSortType sortType);
-
-    @Query("SELECT o FROM OrganizationEntity o ORDER BY " +
-            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
-            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
-            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
-            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
-    List<OrganizationEntity> findList(Specification<OrganizationEntity> specification, OrganizationSortType sortType, Pageable pageable);
-
-    @Query("SELECT o FROM OrganizationEntity o LEFT JOIN FETCH o.organizationUsers ORDER BY " +
-            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
-            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
-            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
-            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
-    List<OrganizationEntity> findListWithUsers(Specification<OrganizationEntity> specification, OrganizationWithUsersSortType sortType);
-
-    @Query("SELECT o FROM OrganizationEntity o LEFT JOIN FETCH o.organizationUsers ORDER BY " +
-            "CASE WHEN :sortType = 'CREATED_AT_ASC' THEN o.createdAt END ASC, " +
-            "CASE WHEN :sortType = 'CREATED_AT_DESC' THEN o.createdAt END DESC, " +
-            "CASE WHEN :sortType = 'NAME_ASC' THEN o.name END ASC, " +
-            "CASE WHEN :sortType = 'NAME_DESC' THEN o.name END DESC")
-    List<OrganizationEntity> findListWithUsers(Specification<OrganizationEntity> specification, OrganizationWithUsersSortType sortType, Pageable pageable);
+    @Query("SELECT o FROM OrganizationEntity o LEFT JOIN FETCH o.organizationUsers")
+    List<OrganizationEntity> findListWithUsers(Specification<OrganizationEntity> specification, Pageable pageable);
 
     @Query("SELECT COUNT(o) FROM OrganizationEntity o")
     int countList(Specification<OrganizationEntity> specification);
