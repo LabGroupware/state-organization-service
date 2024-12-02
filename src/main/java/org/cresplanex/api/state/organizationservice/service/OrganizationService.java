@@ -347,7 +347,7 @@ public class OrganizationService extends BaseService {
         }
     }
 
-    public Sort createSort(OrganizationSortType sortType) {
+    private Sort createSort(OrganizationSortType sortType) {
         return switch (sortType) {
             case CREATED_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
             case CREATED_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
@@ -356,7 +356,7 @@ public class OrganizationService extends BaseService {
         };
     }
 
-    public Sort createSort(OrganizationWithUsersSortType sortType) {
+    private Sort createSort(OrganizationWithUsersSortType sortType) {
         return switch (sortType) {
             case CREATED_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
             case CREATED_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
@@ -365,14 +365,14 @@ public class OrganizationService extends BaseService {
         };
     }
 
-    public Sort createSort(UserOnOrganizationSortType sortType) {
+    private Sort createSort(UserOnOrganizationSortType sortType) {
         return switch (sortType) {
             case ADD_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
             case ADD_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
         };
     }
 
-    public Sort createSort(OrganizationOnUserSortType sortType) {
+    private Sort createSort(OrganizationOnUserSortType sortType) {
         return switch (sortType) {
             case ADD_AT_ASC -> Sort.by(Sort.Order.asc("createdAt"));
             case ADD_AT_DESC -> Sort.by(Sort.Order.desc("createdAt"));
