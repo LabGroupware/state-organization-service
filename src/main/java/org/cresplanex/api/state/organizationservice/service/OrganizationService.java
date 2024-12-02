@@ -189,10 +189,12 @@ public class OrganizationService extends BaseService {
         Specification<OrganizationUserEntity> spec = (root, query, cb) ->
                 cb.equal(root.get("userId"), userId);
 
+        Sort sort = createSort(sortType);
+
         Pageable pageable = switch (paginationType) {
-            case OFFSET -> PageRequest.of(offset / limit, limit);
-            case CURSOR -> PageRequest.of(0, limit); // TODO: Implement cursor pagination
-            default -> Pageable.unpaged();
+            case OFFSET -> PageRequest.of(offset / limit, limit, sort);
+            case CURSOR -> PageRequest.of(0, limit, sort); // TODO: Implement cursor pagination
+            default -> Pageable.unpaged(sort);
         };
 
         List<OrganizationUserEntity> data = organizationUserRepository.findListWithOrganization(spec, pageable);
