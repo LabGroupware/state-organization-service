@@ -7,6 +7,7 @@ import org.cresplanex.api.state.common.event.publisher.AggregateDomainEventPubli
 import org.cresplanex.api.state.common.saga.SagaCommandChannel;
 import org.cresplanex.api.state.common.saga.data.organization.AddUsersOrganizationResultData;
 import org.cresplanex.api.state.common.saga.local.organization.NotFoundOrganizationException;
+import org.cresplanex.api.state.common.saga.local.organization.WillAddedOrganizationUserDuplicatedException;
 import org.cresplanex.api.state.common.saga.model.SagaModel;
 import org.cresplanex.api.state.common.saga.reply.organization.AddUsersOrganizationReply;
 import org.cresplanex.api.state.common.saga.reply.team.AddUsersDefaultTeamReply;
@@ -45,6 +46,7 @@ public class AddUsersOrganizationSaga extends SagaModel<
         this.sagaDefinition = step()
                 .invokeLocal(this::validateOrganization)
                 .onException(NotFoundOrganizationException.class, this::failureLocalExceptionPublish)
+                .onException(WillAddedOrganizationUserDuplicatedException.class, this::failureLocalExceptionPublish)
                 .step()
                 .invokeParticipant(
                         userProfileService.userExistValidate,
@@ -137,7 +139,9 @@ public class AddUsersOrganizationSaga extends SagaModel<
     private void validateOrganization(AddUsersOrganizationSagaState state)
             throws NotFoundOrganizationException {
         this.organizationLocalService.validateOrganizations(
-                List.of(state.getInitialData().getOrganizationId())
+                List.of(state.getInitialData().getOrganizationId()),
+                state.getInitialData().getUsers()
+                .stream().map(AddUsersOrganizationSagaState.InitialData.User::getUserId).toList()
         );
 
         this.localProcessedEventPublish(

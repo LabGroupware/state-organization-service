@@ -2,25 +2,14 @@ package org.cresplanex.api.state.organizationservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.cresplanex.api.state.common.saga.local.LocalException;
 import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
+import org.cresplanex.api.state.common.saga.local.organization.NotAllowedOrganizationUsersContainOwnerException;
 import org.cresplanex.api.state.common.saga.local.organization.NotFoundOrganizationException;
+import org.cresplanex.api.state.common.saga.local.organization.WillAddedOrganizationUserDuplicatedException;
 import org.cresplanex.api.state.common.service.BaseService;
 import org.cresplanex.api.state.organizationservice.constants.PlanType;
-import org.cresplanex.api.state.organizationservice.entity.OrganizationEntity;
-import org.cresplanex.api.state.organizationservice.entity.OrganizationUserEntity;
-import org.cresplanex.api.state.organizationservice.exception.AlreadyExistOrganizationUserException;
-import org.cresplanex.api.state.organizationservice.exception.NotFoundOrganizationUserException;
-import org.cresplanex.api.state.organizationservice.exception.OrganizationNotFoundException;
 import org.cresplanex.api.state.organizationservice.repository.OrganizationRepository;
-import org.cresplanex.api.state.organizationservice.repository.OrganizationUserRepository;
-import org.cresplanex.api.state.organizationservice.saga.model.organization.AddUsersOrganizationSaga;
-import org.cresplanex.api.state.organizationservice.saga.model.organization.CreateOrganizationSaga;
-import org.cresplanex.api.state.organizationservice.saga.state.organization.AddUsersOrganizationSagaState;
-import org.cresplanex.api.state.organizationservice.saga.state.organization.CreateOrganizationSagaState;
-import org.cresplanex.core.saga.orchestration.SagaInstanceFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -31,16 +20,23 @@ import java.util.List;
 public class OrganizationLocalValidateService extends BaseService {
 
     private final OrganizationRepository organizationRepository;
-    private final OrganizationUserRepository organizationUserRepository;
 
-    public void validateCreatedOrganization(String name, String plan)
+    public void validateCreatedOrganization(String name, String plan, String ownerId, List<String> userIds)
             throws InvalidOrganizationPlanException {
         if (!Arrays.asList(PlanType.ALL).contains(plan)) {
             throw new InvalidOrganizationPlanException(List.of(plan));
         }
+        
+        if (userIds.size() != userIds.stream().distinct().count()) {
+            throw new WillAddedOrganizationUserDuplicatedException(userIds);
+        }
+
+        if (userIds.contains(ownerId)) {
+            throw new NotAllowedOrganizationUsersContainOwnerException(userIds, ownerId);
+        }
     }
 
-    public void validateOrganizations(List<String> organizationIds)
+    public void validateOrganizations(List<String> organizationIds, List<String> userIds)
             throws NotFoundOrganizationException {
         organizationRepository.countByOrganizationIdIn(organizationIds)
                 .ifPresent(count -> {
@@ -48,5 +44,9 @@ public class OrganizationLocalValidateService extends BaseService {
                         throw new NotFoundOrganizationException(organizationIds);
                     }
                 });
+
+        if (userIds.size() != userIds.stream().distinct().count()) {
+            throw new WillAddedOrganizationUserDuplicatedException(userIds);
+        }
     }
 }

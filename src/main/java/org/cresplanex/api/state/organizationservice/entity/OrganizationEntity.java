@@ -48,7 +48,6 @@ public class OrganizationEntity extends BaseEntity<OrganizationEntity> {
     private String plan;
 
     @Column(name = "site_url")
-    @Lob
     private String siteUrl;
 
     @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY,

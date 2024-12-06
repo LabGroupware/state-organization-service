@@ -1,5 +1,8 @@
 package org.cresplanex.api.state.organizationservice.saga.model.organization;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.cresplanex.api.state.common.constants.OrganizationServiceApplicationCode;
 import org.cresplanex.api.state.common.dto.organization.OrganizationWithUsersDto;
 import org.cresplanex.api.state.common.event.model.organization.OrganizationCreated;
@@ -8,6 +11,8 @@ import org.cresplanex.api.state.common.event.publisher.AggregateDomainEventPubli
 import org.cresplanex.api.state.common.saga.SagaCommandChannel;
 import org.cresplanex.api.state.common.saga.data.organization.CreateOrganizationResultData;
 import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
+import org.cresplanex.api.state.common.saga.local.organization.NotAllowedOrganizationUsersContainOwnerException;
+import org.cresplanex.api.state.common.saga.local.organization.WillAddedOrganizationUserDuplicatedException;
 import org.cresplanex.api.state.common.saga.model.SagaModel;
 import org.cresplanex.api.state.common.saga.reply.organization.CreateOrganizationAndAddInitialOrganizationUserReply;
 import org.cresplanex.api.state.common.saga.reply.team.CreateDefaultTeamAndAddInitialDefaultTeamUserReply;
@@ -23,6 +28,9 @@ import org.cresplanex.core.saga.orchestration.SagaDefinition;
 import org.cresplanex.api.state.common.saga.reply.userprofile.UserExistValidateReply;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class CreateOrganizationSaga extends SagaModel<
         OrganizationEntity,
@@ -44,6 +52,9 @@ public class CreateOrganizationSaga extends SagaModel<
         this.sagaDefinition = step()
                 .invokeLocal(this::validateOrganization)
                 .onException(InvalidOrganizationPlanException.class, this::failureLocalExceptionPublish)
+                .onException(NotAllowedOrganizationUsersContainOwnerException.class, this::failureLocalExceptionPublish)
+                .onException(WillAddedOrganizationUserDuplicatedException.class, this::failureLocalExceptionPublish)
+                // .onException(
                 .step()
                 .invokeParticipant(
                         userProfileService.userExistValidate,
@@ -137,8 +148,15 @@ public class CreateOrganizationSaga extends SagaModel<
 
         this.organizationLocalService.validateCreatedOrganization(
                 state.getInitialData().getName(),
-                state.getInitialData().getPlan()
+                state.getInitialData().getPlan(),
+                state.getOperatorId(),
+                state.getInitialData().getUsers().stream().map(CreateOrganizationSagaState.InitialData.User::getUserId).toList()
         );
+
+        List<CreateOrganizationSagaState.InitialData.User> list = new ArrayList<>();
+        list.add(new CreateOrganizationSagaState.InitialData.User(state.getOperatorId()));
+        list.addAll(state.getInitialData().getUsers());
+        state.getInitialData().setUsers(list);
 
         this.localProcessedEventPublish(
                 state, OrganizationServiceApplicationCode.SUCCESS, "Organization validated"
