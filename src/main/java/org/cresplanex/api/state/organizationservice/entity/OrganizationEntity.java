@@ -15,7 +15,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@ToString
+//@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "organizations",

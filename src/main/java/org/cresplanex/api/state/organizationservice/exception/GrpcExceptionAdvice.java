@@ -3,10 +3,12 @@ package org.cresplanex.api.state.organizationservice.exception;
 import build.buf.gen.organization.v1.*;
 import build.buf.gen.userpreference.v1.*;
 import io.grpc.Status;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.advice.GrpcAdvice;
 import net.devh.boot.grpc.server.advice.GrpcExceptionHandler;
 import org.cresplanex.api.state.common.saga.local.organization.InvalidOrganizationPlanException;
 
+@Slf4j
 @GrpcAdvice
 public class GrpcExceptionAdvice {
 
@@ -38,6 +40,8 @@ public class GrpcExceptionAdvice {
 
     @GrpcExceptionHandler
     public Status handleInternal(Throwable e) {
+         log.error("Internal error", e);
+
          OrganizationServiceInternalError.Builder descriptionBuilder =
                  OrganizationServiceInternalError.newBuilder()
                          .setMeta(OrganizationServiceErrorMeta.newBuilder()

@@ -24,7 +24,9 @@ import org.cresplanex.api.state.organizationservice.saga.model.organization.Crea
 import org.cresplanex.api.state.organizationservice.saga.state.organization.AddUsersOrganizationSagaState;
 import org.cresplanex.api.state.organizationservice.saga.state.organization.CreateOrganizationSagaState;
 import org.cresplanex.api.state.organizationservice.specification.OrganizationSpecifications;
+import org.cresplanex.api.state.organizationservice.specification.OrganizationUserSpecifications;
 import org.cresplanex.core.saga.orchestration.SagaInstanceFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -34,6 +36,7 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -93,14 +96,14 @@ public class OrganizationService extends BaseService {
             default -> Pageable.unpaged(sort);
         };
 
-        List<OrganizationEntity> data = organizationRepository.findList(spec, pageable);
+        Page<OrganizationEntity> data = organizationRepository.findAll(spec, pageable);
 
         int count = 0;
         if (withCount){
-            count = organizationRepository.countList(spec);
+            count = (int)data.getTotalElements();
         }
         return new ListEntityWithCount<>(
-                data,
+                data.getContent(),
                 count
         );
     }
@@ -120,7 +123,8 @@ public class OrganizationService extends BaseService {
         Specification<OrganizationEntity> spec = Specification.where(
                 OrganizationSpecifications.withPlanFilter(planFilter)
                         .and(OrganizationSpecifications.withOwnerFilter(ownerFilter))
-                        .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter)));
+                        .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter))
+                        .and(OrganizationSpecifications.fetchOrganizationUsers()));
 
         Sort sort = createSort(sortType);
 
@@ -130,14 +134,14 @@ public class OrganizationService extends BaseService {
             default -> Pageable.unpaged(sort);
         };
 
-        List<OrganizationEntity> data = organizationRepository.findListWithUsers(spec, pageable);
+        Page<OrganizationEntity> data = organizationRepository.findAll(spec, pageable);
 
         int count = 0;
         if (withCount){
-            count = organizationRepository.countList(spec);
+            count = (int)data.getTotalElements();
         }
         return new ListEntityWithCount<>(
-                data,
+                data.getContent(),
                 count
         );
     }
@@ -152,8 +156,8 @@ public class OrganizationService extends BaseService {
             UserOnOrganizationSortType sortType,
             boolean withCount
     ) {
-        Specification<OrganizationUserEntity> spec = (root, query, cb) ->
-                cb.equal(root.get("organizationId"), organizationId);
+        Specification<OrganizationUserEntity> spec = Specification.where(
+                OrganizationUserSpecifications.whereOrganizationId(organizationId));
 
         Sort sort = createSort(sortType);
 
@@ -163,14 +167,14 @@ public class OrganizationService extends BaseService {
             default -> Pageable.unpaged(sort);
         };
 
-        List<OrganizationUserEntity> data = organizationUserRepository.findList(spec, pageable);
+        Page<OrganizationUserEntity> data = organizationUserRepository.findAll(spec, pageable);
 
         int count = 0;
         if (withCount){
-            count = organizationUserRepository.countList(spec);
+            count = (int)data.getTotalElements();
         }
         return new ListEntityWithCount<>(
-                data,
+                data.getContent(),
                 count
         );
     }
@@ -185,8 +189,9 @@ public class OrganizationService extends BaseService {
             OrganizationOnUserSortType sortType,
             boolean withCount
     ) {
-        Specification<OrganizationUserEntity> spec = (root, query, cb) ->
-                cb.equal(root.get("userId"), userId);
+        Specification<OrganizationUserEntity> spec = Specification.where(
+                OrganizationUserSpecifications.whereUserId(userId)
+                        .and(OrganizationUserSpecifications.fetchOrganization()));
 
         Sort sort = createSort(sortType);
 
@@ -196,14 +201,14 @@ public class OrganizationService extends BaseService {
             default -> Pageable.unpaged(sort);
         };
 
-        List<OrganizationUserEntity> data = organizationUserRepository.findListWithOrganization(spec, pageable);
+        Page<OrganizationUserEntity> data = organizationUserRepository.findAll(spec, pageable);
 
         int count = 0;
         if (withCount){
-            count = organizationUserRepository.countList(spec);
+            count = (int)data.getTotalElements();
         }
         return new ListEntityWithCount<>(
-                data,
+                data.getContent(),
                 count
         );
     }
@@ -213,9 +218,10 @@ public class OrganizationService extends BaseService {
             List<String> organizationIds,
             OrganizationSortType sortType
     ) {
-        Specification<OrganizationEntity> spec = (root, query, cb) ->
-                root.get("organizationId").in(organizationIds);
-        return organizationRepository.findList(spec, Pageable.unpaged(createSort(sortType)));
+        Specification<OrganizationEntity> spec = Specification.where(
+                OrganizationSpecifications.whereOrganizationIds(organizationIds));
+
+        return organizationRepository.findAll(spec, createSort(sortType));
     }
 
     @Transactional(readOnly = true)
@@ -223,9 +229,11 @@ public class OrganizationService extends BaseService {
             List<String> organizationIds,
             OrganizationWithUsersSortType sortType
     ) {
-        Specification<OrganizationEntity> spec = (root, query, cb) ->
-                root.get("organizationId").in(organizationIds);
-        return organizationRepository.findListWithUsers(spec, Pageable.unpaged(createSort(sortType)));
+        Specification<OrganizationEntity> spec = Specification.where(
+                OrganizationSpecifications.whereOrganizationIds(organizationIds)
+                        .and(OrganizationSpecifications.fetchOrganizationUsers()));
+
+        return organizationRepository.findAll(spec, createSort(sortType));
     }
 
     @Transactional
@@ -298,6 +306,7 @@ public class OrganizationService extends BaseService {
     }
 
     public List<OrganizationUserEntity> addUsers(String operatorId, String organizationId, List<OrganizationUserEntity> users) {
+
         List<OrganizationUserEntity> existUsers = organizationUserRepository.
                 findAllByOrganizationIdAndUserIds(organizationId, users.stream()
                         .map(OrganizationUserEntity::getUserId)
@@ -308,6 +317,14 @@ public class OrganizationService extends BaseService {
                     .toList();
             throw new AlreadyExistOrganizationUserException(existUserIds);
         }
+        OrganizationEntity organization = organizationRepository.findById(organizationId)
+                .orElseThrow(() -> new OrganizationNotFoundException(
+                        OrganizationNotFoundException.FindType.BY_ID,
+                        organizationId
+                ));
+        users = users.stream()
+                .peek(user -> user.setOrganization(organization))
+                .toList();
         return organizationUserRepository.saveAll(users);
     }
 

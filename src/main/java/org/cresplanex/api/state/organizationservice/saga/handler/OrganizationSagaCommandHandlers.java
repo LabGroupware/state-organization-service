@@ -135,7 +135,6 @@ public class OrganizationSagaCommandHandlers {
             List<OrganizationUserEntity> users = command.getUsers().stream().map(user -> {
                 OrganizationUserEntity userEntity = new OrganizationUserEntity();
                 userEntity.setUserId(user.getUserId());
-                userEntity.setOrganizationId(command.getOrganizationId());
                 return userEntity;
             }).toList();
 
