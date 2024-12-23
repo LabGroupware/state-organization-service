@@ -9,6 +9,12 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5435/organization}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:20}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:60000}
+      idle-timeout: ${DB_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_MAX_LIFETIME:1800000}
+      leak-detection-threshold: ${DB_LEAK_DETECTION_THRESHOLD:60000}
   flyway:
     enable: true
     baseline-on-migrate: true # 既にあるテーブルなどがあるデータベースでもマイグレーションを実行する
@@ -16,12 +22,16 @@ spring:
 grpc:
   server:
     port: ${ORGANIZATION_SERVICE_GRPC_PORT:9060} # default: 9090
+    keep-alive-timeout: 60
+    keep-alive-time: 600
   client:
     jobService:
       address: dns:///${JOB_SERVICE_HOST:localhost}:${JOB_SERVICE_GRPC_PORT:9100}
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: PLAINTEXT
+      keep-alive-timeout: 60
+      keep-alive-time: 600
 server:
   port: ${ORGANIZATION_SERVICE_PORT:8060}
 core:

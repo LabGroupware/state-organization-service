@@ -40,13 +40,15 @@ public class GrpcExceptionAdvice {
 
     @GrpcExceptionHandler
     public Status handleInternal(Throwable e) {
-         log.error("Internal error", e);
+        log.error("Internal error", e);
+
+        String message = e.getMessage() != null ? e.getMessage() : "Unknown error occurred";
 
          OrganizationServiceInternalError.Builder descriptionBuilder =
                  OrganizationServiceInternalError.newBuilder()
                          .setMeta(OrganizationServiceErrorMeta.newBuilder()
                                  .setCode(OrganizationServiceErrorCode.ORGANIZATION_SERVICE_ERROR_CODE_INTERNAL)
-                                 .setMessage(e.getMessage())
+                                 .setMessage(message)
                                  .build());
 
          return Status.INTERNAL
