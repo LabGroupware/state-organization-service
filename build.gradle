@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.5'
 	id 'io.spring.dependency-management' version '1.1.6'
+	id 'com.google.cloud.tools.jib' version '3.4.4'
 }
 
 group = 'org.cresplanex.api.state'
@@ -85,4 +86,58 @@ processResources {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+ext {
+	imageVersion = project.hasProperty('imageVersion') ? project.imageVersion : 'latest'
+	imageArchitecture = project.hasProperty('imageArchitecture') ? project.imageArchitecture : 'amd64'
+	imageOs = project.hasProperty('imageOs') ? project.imageOs : 'linux'
+}
+
+jib {
+	from {
+		platforms {
+			platform {
+				architecture = imageArchitecture
+				os = imageOs
+			}
+		}
+	}
+	to {
+		image = "ablankz/nova-organization-service"
+		tags = ["${imageVersion}-${imageArchitecture}", "latest-${imageArchitecture}"]
+	}
+}
+
+def platforms = [
+		['os': 'linux', 'arch': 'amd64'],
+		['os': 'linux', 'arch': 'arm64']
+]
+
+import com.google.cloud.tools.jib.gradle.PlatformParameters
+
+platforms.each { platform ->
+
+	def taskName = "jibDockerBuild_${platform.os.capitalize()}${platform.arch.capitalize()}"
+
+	tasks.register(taskName) {
+		group = 'docker'
+		description = "Build Docker image for ${platform.os}/${platform.arch}"
+		PlatformParameters pltParam = new PlatformParameters();
+		pltParam.setArchitecture(platform.arch)
+		pltParam.setOs(platform.os)
+
+		doLast {
+			jib.from.platforms.unset()
+			jib.from.platforms.addAll([pltParam])
+			jib.to.image = "ablankz/nova-organization-service"
+			jib.to.tags = ["${imageVersion}-${platform.arch}", "latest-${platform.arch}"]
+			jibDockerBuild.buildDocker()
+		}
+	}
+}
+
+tasks.register('jibMultiBuild') {
+	group = 'docker'
+	dependsOn tasks.matching { it.name.startsWith('jibDockerBuild_') }
 }
