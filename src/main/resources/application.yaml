@@ -24,6 +24,7 @@ grpc:
     port: ${ORGANIZATION_SERVICE_GRPC_PORT:9060} # default: 9090
     keep-alive-timeout: 60
     keep-alive-time: 600
+    max-inbound-message-size: 52428800 # TODO: message chunking
   client:
     jobService:
       address: dns:///${JOB_SERVICE_HOST:localhost}:${JOB_SERVICE_GRPC_PORT:9100}
@@ -32,6 +33,7 @@ grpc:
       negotiationType: PLAINTEXT
       keep-alive-timeout: 60
       keep-alive-time: 600
+      max-inbound-message-size: 52428800 # TODO: message chunking
 server:
   port: ${ORGANIZATION_SERVICE_PORT:8060}
 core:
