@@ -36,7 +36,7 @@ public class OrganizationSpecifications {
                 return null;
             }
             if (Long.class != query.getResultType()) {
-                root.fetch("organizationUsers", JoinType.LEFT);
+                root.join("organizationUsers", JoinType.LEFT);
                 query.distinct(true);
                 return null;
             }
