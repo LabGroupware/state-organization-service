@@ -37,7 +37,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -123,8 +127,8 @@ public class OrganizationService extends BaseService {
         Specification<OrganizationEntity> spec = Specification.where(
                 OrganizationSpecifications.withPlanFilter(planFilter)
                         .and(OrganizationSpecifications.withOwnerFilter(ownerFilter))
-                        .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter))
-                        .and(OrganizationSpecifications.fetchOrganizationUsers()));
+                        .and(OrganizationSpecifications.withBelongUsersFilter(usersFilter)));
+//                        .and(OrganizationSpecifications.fetchOrganizationUsers()));
 
         Sort sort = createSort(sortType);
 
@@ -135,6 +139,31 @@ public class OrganizationService extends BaseService {
         };
 
         Page<OrganizationEntity> data = organizationRepository.findAll(spec, pageable);
+
+        List<String> organizationIds = data.getContent().stream()
+                .map(OrganizationEntity::getOrganizationId)
+                .toList();
+
+        Specification<OrganizationUserEntity> userSpec = Specification.where(
+                OrganizationUserSpecifications.whereOrganizationIds(organizationIds));
+
+        List<OrganizationUserEntity> users = organizationUserRepository.findAll(userSpec);
+
+        Map<String, List<OrganizationUserEntity>> userMap = new HashMap<>();
+
+        users.forEach(user -> {
+            if (userMap.containsKey(user.getOrganizationId())) {
+                userMap.get(user.getOrganizationId()).add(user);
+            } else {
+                List<OrganizationUserEntity> list = new ArrayList<>();
+                list.add(user);
+                userMap.put(user.getOrganizationId(), list);
+            }
+        });
+
+        data.getContent().forEach(organization -> {
+            organization.setOrganizationUsers(userMap.get(organization.getOrganizationId()));
+        });
 
         int count = 0;
         if (withCount){
