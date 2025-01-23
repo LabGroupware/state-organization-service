@@ -388,7 +388,8 @@ public class OrganizationService extends BaseService {
             List<String> notExistUserIds = userIds.stream()
                     .filter(userId -> !existUserIds.contains(userId))
                     .toList();
-            throw new NotFoundOrganizationUserException(organizationId, notExistUserIds);
+            // TODO: Implement NotFoundOrganizationUserException
+//            throw new NotFoundOrganizationUserException(organizationId, notExistUserIds);
         }
     }
 
